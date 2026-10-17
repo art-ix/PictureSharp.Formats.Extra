@@ -1,5 +1,5 @@
-# Publishing a GitHub Release builds, tests and packs the plugin, pushes it to nuget.org (Trusted Publishing, no stored
-# API key) and attaches the package to the release.
+# Publishing a GitHub Release builds, tests and packs the plugin and attaches the package to the release. It is pushed
+# to nuget.org (Trusted Publishing, no stored API key) only when the repository variable PUBLISH_NUGET is "true".
 name: Release
 
 on:
@@ -19,7 +19,6 @@ jobs:
   publish:
     needs: validate
     runs-on: ubuntu-24.04
-    environment: nuget
     steps:
       - uses: actions/checkout@v4
 
@@ -39,6 +38,26 @@ jobs:
       - run: dotnet test -c Release --no-build
       - run: dotnet pack src/PictureSharp.Formats.Extra -c Release --no-build -o artifacts
 
+      - run: gh release upload "${GITHUB_REF_NAME}" artifacts/*.nupkg --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-packages
+          path: artifacts/*.nupkg
+
+  nuget:
+    needs: publish
+    if: vars.PUBLISH_NUGET == 'true'
+    runs-on: ubuntu-24.04
+    environment: nuget
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-packages
+          path: artifacts
+
       - name: NuGet login
         id: login
         uses: NuGet/login@v1
@@ -46,7 +65,3 @@ jobs:
           user: ${{ secrets.NUGET_USER }}
 
       - run: dotnet nuget push "artifacts/*.nupkg" --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
-
-      - run: gh release upload "${GITHUB_REF_NAME}" artifacts/*.nupkg --clobber
-        env:
-          GH_TOKEN: ${{ github.token }}

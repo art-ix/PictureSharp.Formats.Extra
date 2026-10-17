@@ -1,7 +1,7 @@
 # Working on PictureSharp.Formats.Extra
 
 PictureSharp.Formats.Extra is a format plugin for [PictureSharp](https://github.com/art-ix/PictureSharp) that adds QOI,
-Netpbm and TGA (and later DDS, PSD/PSB, SGI, Sun Raster, XBM and XPM) entirely in C#. It is a separate repository and package with its own
+Netpbm, TGA, DDS and PSD/PSB (and later SGI, Sun Raster, XBM and XPM) entirely in C#. It is a separate repository and package with its own
 version; it uses PictureSharp only through its public NuGet API.
 
 Before starting, read [plan.md](plan.md) to identify the current version and its definition of done (DoD), then read
@@ -32,7 +32,7 @@ go to the core repository's `plan.md` (sibling folder `../PictureSharp`).
 ## Code and layout
 
 Follow `.editorconfig`. Enable nullable annotations, `TreatWarningsAsErrors` and XML documentation for public API. Use
-English for identifiers, comments and XML docs; project documents may use Polish. Keep types focused, match filenames
+English for identifiers, comments, XML docs, `plan.md` and the README; `progres.md` may use Polish. Keep types focused, match filenames
 to the main type, give public enums separate files, keep hot loops allocation-free (`ArrayPool<T>.Shared`, the pooled
 `Common/OutputBuffer` for encoders) and write sparse comments that explain why or name the port source
 (`// port: qoi.h qoi_decode`).
@@ -71,4 +71,7 @@ A public API change updates `tests/assets/PublicApi.approved.txt` from the `Publ
 
 - Commit and push only when the user explicitly asks.
 - `VERSION` contains the SemVer version; `Directory.Build.props` applies it.
+- A GitHub Release with the tag `v<VERSION>` runs `release.yml`: CI, pack, and the `.nupkg` attached to the release.
+  The nuget.org push runs only when the repository variable `PUBLISH_NUGET` is `true`; it is unset until the user
+  decides to publish.
 - Never commit `progres.md`, `reference/`, `tests/assets/external/`, `bin/` or `obj/`.

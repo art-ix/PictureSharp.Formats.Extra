@@ -1,119 +1,130 @@
 # PictureSharp.Formats.Extra: plan
 
-Wtyczka z dodatkowymi formatami dla PictureSharp: QOI, PNM i TGA (odczyt i zapis), DDS, PSD/PSB, SGI, Sun
-Raster oraz XBM/XPM. Osobne repozytorium
-i własny SemVer, wzorowane na `PictureSharp.Heif`. Zależność wyłącznie od publicznego pakietu `PictureSharp`
-(minimum 0.7.1), bez kopii kodu rdzenia.
+A plugin with extra formats for PictureSharp: QOI, PNM and TGA (read and write), DDS, PSD/PSB, SGI, Sun Raster and
+XBM/XPM. It has its own repository and SemVer, modelled on `PictureSharp.Heif`, and depends only on the public
+`PictureSharp` package (minimum 0.7.1), with no copies of core code.
 
-TIFF przeniesiono do osobnego pakietu `PictureSharp.Tiff` (repozytorium `../PictureSharp.Tiff`, decyzja użytkownika
-z 2026-10-17): to większy format dla innych odbiorców, z własnym rytmem wydań.
+TIFF moved to the separate `PictureSharp.Tiff` package (repository `../PictureSharp.Tiff`, user decision of
+2026-10-17): it is a larger format for a different audience, with its own release cadence.
 
-Decyzja użytkownika (2026-10-17): wtyczki mogą używać `System.IO.Compression` do dekompresji (zlib-ng jest częścią
-runtime na każdej platformie). Rdzeń zrezygnuje z tej reguły w przyszłości.
+User decision (2026-10-17): plugins may use `System.IO.Compression` for decompression (zlib-ng ships with the runtime on
+every platform). The core will drop this rule in the future.
 
-## Wersje
+## Versions
 
-| Wersja | Zakres | Status |
+| Version | Scope | Status |
 | --- | --- | --- |
-| 0.1.0 | Szkielet repo, QOI, PNM, TGA (odczyt i zapis) | W toku: kod i testy gotowe (commit b891c11), bez CI i wydania |
-| 0.2.0 | DDS: DX9/DX10, nieskompresowane, BC1–BC5, BC7, BC6H; zapis BGRA8/BGRX8 | W toku: kod i testy gotowe (2026-10-17), bez commita i wydania |
-| 0.3.0 | PSD/PSB (odczyt obrazu scalonego) | W toku: kod i testy gotowe (2026-10-17), bez commita i wydania |
-| 0.4.0 | SGI (odczyt i zapis), Sun Raster (odczyt), XBM (odczyt i zapis), XPM (odczyt) | Planowana |
+| 0.1.0 | Repository skeleton, QOI, PNM, TGA (read and write) | Done (b891c11); released as part of v0.3.0 |
+| 0.2.0 | DDS: DX9/DX10, uncompressed, BC1–BC5, BC7, BC6H; BGRA8/BGRX8 writing | Done (268087c); released as part of v0.3.0 |
+| 0.3.0 | PSD/PSB (merged image, read only) | Done (f62011b); first GitHub release v0.3.0, not yet on NuGet |
+| 0.4.0 | SGI (read and write), Sun Raster (read), XBM (read and write), XPM (read) | Planned |
 
-Decyzja użytkownika (2026-10-17): po DDS dochodzą PSD/PSB, SGI, Sun Raster i XBM/XPM. Poza zakresem: CUR
-(pasuje do rdzenia obok ICO), formaty HDR (Radiance, OpenEXR — czekają na HDR SPI), AVIF/JPEG XL/JPEG 2000 (osobne
-pakiety jak `PictureSharp.Heif`), BLP, FLI/FLC, DCX. KTX/KTX2 wycofany decyzją użytkownika (2026-10-17).
+0.1.0 and 0.2.0 were never released on their own: the first release, v0.3.0, contains all three versions.
+
+User decision (2026-10-17): after DDS come PSD/PSB, SGI, Sun Raster and XBM/XPM. Out of scope: CUR (belongs in the
+core next to ICO), HDR formats (Radiance, OpenEXR — waiting for the HDR SPI), AVIF/JPEG XL/JPEG 2000 (separate
+packages like `PictureSharp.Heif`), BLP, FLI/FLC, DCX. KTX/KTX2 was dropped by user decision (2026-10-17).
+
+## Release
+
+- GitHub Releases are published from the `vX.Y.Z` tag matching `VERSION`. The release workflow runs CI, packs the
+  plugin and attaches the `.nupkg` to the release.
+- Publishing to nuget.org is off until the user decides otherwise: the push step runs only when the repository
+  variable `PUBLISH_NUGET` is `true` (Trusted Publishing, `nuget` environment, secret `NUGET_USER`).
 
 ## 0.1.0 — QOI, PNM, TGA
 
-Zrobione:
-- `ExtraFormats.AddExtraFormats()` i `CreateModules()`; `QoiFormat`, `PnmFormat`, `TgaFormat` w
-  `PictureSharp.Formats.<Format>`, opcje enkoderów, skróty `SaveAsXxx`/`ToXxx`/`ImageFormat.Xxx`.
-- QOI: port `qoi.h` (`qoi_decode`, `qoi_encode`); kolorystyka linear ↔ `ImageMetadata.Gamma = 1`; plik 3-kanałowy
-  zawsze nieprzezroczysty.
-- PNM: P1–P6 (plain i binarne), PAM P7 (BLACKANDWHITE, GRAYSCALE, RGB i warianty `_ALPHA`), maxval 1–65535,
-  skalowanie jak Pillow (`round(v / maxval * 255)` w double, połówki do parzystej); zapis PBM/PGM/PPM/PAM, `PnmKind.Auto`.
-- TGA: typy 1/2/3 i RLE (pakiety mogą przekraczać wiersze), 8/15/16/24/32 bpp, palety 15/16/24/32, orientacja, obszar
-  rozszerzeń TGA 2.0 (brak alfy, alfa premultiplikowana); zapis 8-bit szary/24/32 z RLE w obrębie wiersza.
-- Testy (279): korpus 44 plików = `reference.json` (Pillow 10.2.0, ImageMagick dla PAM i palet 32-bit), bajtowa
-  zgodność enkodera QOI z portem `qoi_encode`, round-trip, przypadki brzegowe, fuzzing (`Slow`), `MaxPixels`,
-  anulowanie, architektura, snapshot API, Oracle: pliki z enkoderów czytane przez Pillow 10.2.0 (10 przypadków).
+Done:
+- `ExtraFormats.AddExtraFormats()` and `CreateModules()`; `QoiFormat`, `PnmFormat`, `TgaFormat` in
+  `PictureSharp.Formats.<Format>`, encoder options, `SaveAsXxx`/`ToXxx`/`ImageFormat.Xxx` shortcuts.
+- QOI: port of `qoi.h` (`qoi_decode`, `qoi_encode`); linear colour space ↔ `ImageMetadata.Gamma = 1`; a 3-channel
+  file is always opaque.
+- PNM: P1–P6 (plain and binary), PAM P7 (BLACKANDWHITE, GRAYSCALE, RGB and the `_ALPHA` variants), maxval 1–65535,
+  scaled as Pillow does (`round(v / maxval * 255)` in double, ties to even); PBM/PGM/PPM/PAM writing, `PnmKind.Auto`.
+- TGA: types 1/2/3 and RLE (packets may cross rows), 8/15/16/24/32 bpp, 15/16/24/32-bit colour maps, orientation,
+  TGA 2.0 extension area (no alpha, premultiplied alpha); 8-bit grey/24/32 writing with RLE within a row.
+- Tests (279): a 44-file corpus = `reference.json` (Pillow 10.2.0, ImageMagick for PAM and 32-bit colour maps),
+  byte-exact QOI encoder against the `qoi_encode` port, round trips, edge cases, fuzzing (`Slow`), `MaxPixels`,
+  cancellation, architecture, API snapshot, Oracle: encoder output read by Pillow 10.2.0 (10 cases).
 
-Pozostało do DoD:
-- Wyrocznia `qoi.h` (oryginalny `qoiconv`) zamiast portu w Pythonie — wymaga zgody na pobranie `qoi.h` do `reference/`.
-- CI na GitHubie (workflow gotowy, nieuruchomiony; brak remote), release notes i decyzja o publikacji NuGet.
-- Smoke test konsumenta z trimmingiem i Native AOT (wzór: `verify-package-consumer.sh` rdzenia).
+Remaining for the DoD:
+- A `qoi.h` oracle (the original `qoiconv`) instead of the Python port — needs approval to download `qoi.h` into
+  `reference/`.
+- Consumer smoke test with trimming and Native AOT (model: the core's `verify-package-consumer.sh`).
 
 ## 0.2.0 — DDS
 
-- Nagłówek DX9 i DX10; tylko poziom mip 0, pierwsza ściana/warstwa (wybór wymaga opcji dekodera per wtyczka).
-- Dekodery bloków BC1–BC5, BC7, BC6H (→ 8 bit z obcięciem do [0, 1]); skalarne, SIMD tylko z testem równości.
-- DoD: piksele = Pillow (BC1–BC5, BC7) i dekoder referencyjny (bcdec) dla BC6H; zapis BGRA8 round-trip; próbki
-  BC6H/BC7 z `texconv`/`nvcompress` lub external po zgodzie użytkownika.
+- DX9 and DX10 headers; only mip level 0 of the first face/layer (choosing one needs per-plugin decoder options).
+- BC1–BC5, BC7, BC6H block decoders (→ 8 bit, clamped to [0, 1]); scalar, SIMD only with an equality test.
+- DoD: pixels = Pillow (BC1–BC5, BC7) and a reference decoder (bcdec) for BC6H; BGRA8 writing round trip; BC6H/BC7
+  samples from `texconv`/`nvcompress`, or an external corpus with the user's approval.
 
-Zrobione (2026-10-17):
-- `DdsFormat`, `DdsEncoderOptions` (`DdsPixelFormat` Auto/Bgra32/Bgrx32), skróty `SaveAsDds`/`ToDds`/`ImageFormat.Dds`;
-  dekodery bloków w `Common/BlockCompression/`.
-- DX9: maski RGB/luminancja/alfa 8–32 bit (skalowanie jak Pillow `int(v / max * 255)`), L8, LA8, paleta P8, FourCC
-  DXT1–DXT5 (DXT2/DXT4 z odwróceniem premultiplikacji), ATI1/ATI2, BC4U/BC4S/BC5U/BC5S. DX10: BC1–BC7, BC6H UF16/SF16,
-  RGBA8/BGRA8/BGRX8 (UNORM, SRGB, TYPELESS), B5G6R5, B5G5R5A1, B4G4R4A4, R10G10B10A2, R8, R8G8, A8; tryb alfy DX10
+Done (2026-10-17):
+- `DdsFormat`, `DdsEncoderOptions` (`DdsPixelFormat` Auto/Bgra32/Bgrx32), `SaveAsDds`/`ToDds`/`ImageFormat.Dds`
+  shortcuts; block decoders in `Common/BlockCompression/`.
+- DX9: RGB/luminance/alpha masks of 8–32 bits (scaled as Pillow does, `int(v / max * 255)`), L8, LA8, P8 palette,
+  FourCC DXT1–DXT5 (DXT2/DXT4 unpremultiplied), ATI1/ATI2, BC4U/BC4S/BC5U/BC5S. DX10: BC1–BC7, BC6H UF16/SF16,
+  RGBA8/BGRA8/BGRX8 (UNORM, SRGB, TYPELESS), B5G6R5, B5G5R5A1, B4G4R4A4, R10G10B10A2, R8, R8G8, A8; DX10 alpha mode
   (premultiplied, opaque). Float, YUV, ASTC, ETC → `NotSupportedException`.
-- Zachowanie jak Pillow 10.2.0: BC1 z bitową replikacją 565 i dzieleniem obcinającym, BC4/BC5 SNORM przez +128,
-  niebieski 128 w BC5 SNORM, zarezerwowany tryb BC7 → nieprzezroczysta czerń. BC6H według specyfikacji (jak bcdec):
-  Pillow interpoluje bez `+32` i nie rozszerza znaku po transformacji w trybach z deltami (sprawdzone emulacją: po
-  odtworzeniu obu odstępstw wynik = Pillow we wszystkich 14 trybach).
-- Korpus 41 plików DDS: Pillow, ImageMagick (DXT1/3/5 z mipmapami), losowe bloki z równomiernym rozkładem trybów
-  BC6H/BC7 (129×127, częściowe bloki), cube map, tablica DX10, układy masek; referencje: Pillow, „pillow-dx9” (nagłówek
-  DX10 zamieniony na równoważny DX9 dla formatów, których Pillow nie czyta z DX10) i bcdec dla BC6H
-  (`tests/assets/bc6h_reference.c`, nagłówek w `reference/bcdec/`, pobrany za zgodą użytkownika).
-- Testy: 513/513 (w tym Slow i Oracle; Oracle zapisu DDS BGRA/BGRX czytanego przez Pillow).
+- Behaviour as Pillow 10.2.0: BC1 with 565 bit replication and truncating division, BC4/BC5 SNORM shifted by +128,
+  blue 128 in BC5 SNORM, the reserved BC7 mode → opaque black. BC6H follows the spec (like bcdec): Pillow interpolates
+  without `+32` and does not sign-extend after the transform in the delta modes (checked by emulation: reproducing
+  both deviations gives Pillow's result in all 14 modes).
+- A 41-file DDS corpus: Pillow, ImageMagick (DXT1/3/5 with mipmaps), random blocks with an even spread of BC6H/BC7
+  modes (129×127, partial blocks), a cube map, a DX10 array, mask layouts; references: Pillow, "pillow-dx9" (the DX10
+  header replaced by the equivalent DX9 one for formats Pillow does not read from DX10) and bcdec for BC6H
+  (`tests/assets/bc6h_reference.c`, header in `reference/bcdec/`, downloaded with the user's approval).
+- Tests: 513/513 (including Slow and Oracle; Oracle of DDS BGRA/BGRX writing read by Pillow).
 
-Pozostało do DoD: próbki BC6H/BC7 z prawdziwych enkoderów (`texconv`/`nvcompress`, brak na tej maszynie; korpus
-pokrywa wszystkie tryby losowymi blokami), smoke test trimming/AOT razem z 0.1.0, commit, release notes.
+Remaining for the DoD: BC6H/BC7 samples from real encoders (`texconv`/`nvcompress`, not available on this machine; the
+corpus covers every mode with random blocks), trimming/AOT smoke test together with 0.1.0.
 
 ## 0.3.0 — PSD/PSB
 
-- Tylko obraz scalony (sekcja Image Data); warstwy, maski i efekty pomijane (sekcje czytane jako długości). Kompresja
-  raw i PackBits; ZIP (tylko w warstwach) nie jest potrzebny. PSB: 64-bitowe długości sekcji i wymiary do 300 000.
-- Tryby: Bitmap, Grayscale, Indexed, RGB, CMYK (naiwna konwersja jak Pillow, bez ICC), Duotone jako szary; 8 i 16 bit
-  (16 → 8 z udokumentowanym zaokrągleniem), 32-bit → `NotSupportedException`. Kanał alfa: pierwszy dodatkowy kanał
-  jak Pillow; Lab i Multichannel → `NotSupportedException`.
-- Metadane: ICC (zasób 1039), EXIF (1058), XMP (1060) do `ImageMetadata`; rozdzielczość (1005).
-- DoD: piksele = Pillow 10.2.0 (8 bit) i ImageMagick (PSB, 16 bit); próbki z GIMP/ImageMagick/Krita, ewentualny
-  korpus zewnętrzny po zgodzie użytkownika.
-
-Zrobione (2026-10-17):
-- `PsdFormat` (tylko odczyt, `.psd`/`.psb`), `ImageFormat.Psd`; bez opcji enkodera i skrótów zapisu.
-- Tryby Bitmap (1 bit, 1 = czarny jak w specyfikacji i ImageMagick; Pillow odwraca), Grayscale, Duotone (jako szary),
-  Indexed (paleta planarna 768 B), RGB, CMYK (wzór Pillow `cmyk2rgb` po redukcji do 8 bit); 8 i 16 bit
-  (`round(v / 257)`); raw i PackBits (tabela długości 2 B w PSD, 4 B w PSB). Lab, Multichannel, 32 bit, ZIP →
+- Only the merged image (Image Data section); layers, masks and effects are skipped (their sections are read as
+  lengths). Raw and PackBits compression; ZIP (used only in layers) is not needed. PSB: 64-bit section lengths and
+  dimensions up to 300,000.
+- Modes: Bitmap, Grayscale, Indexed, RGB, CMYK (naive conversion as in Pillow, no ICC), Duotone as grey; 8 and 16 bit
+  (16 → 8 with the documented rounding), 32-bit → `NotSupportedException`. Lab and Multichannel →
   `NotSupportedException`.
-- Alfa (decyzja użytkownika: „jak Photoshop”): pierwszy dodatkowy kanał, gdy liczba warstw < 0 (także w blokach
-  Lr16/Lr32/Layr) lub brak warstw; Indexed i Bitmap zawsze nieprzezroczyste. Kolory RGB odmatowane z białego dokładnie
-  jak ImageMagick Q16 (double, ta sama kolejność działań, potem 16 → 8 bit); szarość i CMYK bez odmatowania, jak w
-  ImageMagick.
-- Metadane: ICC 1039, EXIF 1058, XMP 1060 (z `ReserveMetadata`, pomijane przy `IgnoreMetadata`), rozdzielczość 1005.
-- Korpus 30 plików (ImageMagick + własny writer: bez warstw, dodatnia liczba warstw z kanałem zaznaczenia, dwa kanały
-  dodatkowe, 16 bit raw/PackBits, PSB raw, duotone, zasoby z nazwą i nieparzystą długością). Referencje: Pillow, gdy
-  zgadza się z ImageMagick, inaczej ImageMagick 16 bit zaokrąglony w Pythonie (`-depth 8` ImageMagick obcina);
-  pliki bez warstw przez kopię z liczbą warstw −1 („imagemagick-layers”).
+- Metadata: ICC (resource 1039), EXIF (1058), XMP (1060) into `ImageMetadata`; resolution (1005).
+- DoD: pixels = Pillow 10.2.0 (8 bit) and ImageMagick (PSB, 16 bit); samples from GIMP/ImageMagick/Krita, an external
+  corpus only with the user's approval.
 
-Pozostało do DoD: próbki z GIMP/Krity/Photoshopa (brak narzędzi na tej maszynie; zewnętrzny korpus tylko po zgodzie),
-w tym sprawdzenie odmatowania szarości/CMYK na plikach z Photoshopa; commit, release notes.
+Done (2026-10-17):
+- `PsdFormat` (read only, `.psd`/`.psb`), `ImageFormat.Psd`; no encoder options or save shortcuts.
+- Modes Bitmap (1 bit, 1 = black as in the spec and ImageMagick; Pillow inverts it), Grayscale, Duotone (as grey),
+  Indexed (768-byte planar palette), RGB, CMYK (Pillow's `cmyk2rgb` formula after the 8-bit reduction); 8 and 16 bit
+  (`round(v / 257)`); raw and PackBits (2-byte row lengths in PSD, 4-byte in PSB). Lab, Multichannel, 32 bit, ZIP →
+  `NotSupportedException`.
+- Alpha (user decision: "as Photoshop"): the first extra channel when the layer count is negative (also in the
+  Lr16/Lr32/Layr blocks) or the file has no layers; Indexed and Bitmap are always opaque. RGB colours are unblended
+  from white exactly as ImageMagick Q16 does (double, the same operation order, then 16 → 8 bit); greyscale and CMYK
+  are not unblended, as in ImageMagick.
+- Metadata: ICC 1039, EXIF 1058, XMP 1060 (with `ReserveMetadata`, skipped with `IgnoreMetadata`), resolution 1005.
+- A 30-file corpus (ImageMagick plus an own writer: no layers, a positive layer count with a selection channel, two
+  extra channels, 16-bit raw/PackBits, raw PSB, duotone, resources with a name and an odd length). References: Pillow
+  when it agrees with ImageMagick, otherwise ImageMagick's 16-bit output rounded in Python (ImageMagick's `-depth 8`
+  truncates); files without layers through a copy with layer count −1 ("imagemagick-layers").
+- Tests: 684/684 (including Slow).
+
+Remaining for the DoD: samples from GIMP/Krita/Photoshop (no such tools on this machine; an external corpus only with
+approval), including a check of greyscale/CMYK unblending on Photoshop files.
 
 ## 0.4.0 — SGI, Sun Raster, XBM, XPM
 
-- SGI (`.sgi`, `.rgb`, `.rgba`, `.bw`): verbatim i RLE, 1–4 kanały, 8 i 16 bit; zapis 8-bit z RLE i bez (jak Pillow).
-- Sun Raster (`.ras`): 1/8/24/32 bpp, typy standard/RLE/RGB, mapa kolorów; tylko odczyt.
-- XBM: odczyt X10 i X11 (`#define`, `static char`), hotspot do metadanych; zapis X11.
-- XPM: XPM3, klucze `c` (i `m`/`g` jako zapas), kolory `#RGB`/`#RRGGBB`/`#RRRRGGGGBBBB`, `None`, nazwy z tabeli X11
-  (wbudowana, bez plików systemu); znaki na piksel do 4; tylko odczyt.
-- DoD: piksele = Pillow 10.2.0 (SGI, Sun, XBM, XPM), ImageMagick dla wariantów, których Pillow nie czyta (Sun RLE
-  24-bit, XPM z nazwami); oracle dla zapisu SGI i XBM.
+- SGI (`.sgi`, `.rgb`, `.rgba`, `.bw`): verbatim and RLE, 1–4 channels, 8 and 16 bit; 8-bit writing with and without
+  RLE (as Pillow).
+- Sun Raster (`.ras`): 1/8/24/32 bpp, standard/RLE/RGB types, colour map; read only.
+- XBM: X10 and X11 reading (`#define`, `static char`), hotspot into metadata; X11 writing.
+- XPM: XPM3, `c` keys (with `m`/`g` as a fallback), `#RGB`/`#RRGGBB`/`#RRRRGGGGBBBB` colours, `None`, X11 colour names
+  (built-in table, no system files); up to 4 characters per pixel; read only.
+- DoD: pixels = Pillow 10.2.0 (SGI, Sun, XBM, XPM), ImageMagick for variants Pillow does not read (24-bit Sun RLE, XPM
+  with names); an oracle for SGI and XBM writing.
 
-Każda wersja dopisuje przestrzeń `PictureSharp.Formats.<Format>` do `ArchitectureTests`, aktualizuje snapshot API,
-README i `ExtraFormats.AddExtraFormats`.
+Every version adds its `PictureSharp.Formats.<Format>` namespace to `ArchitectureTests` and updates the API snapshot,
+the README and `ExtraFormats.AddExtraFormats`.
 
-## Zgłoszenia do rdzenia
+## Requests to the core
 
-- Opcje dekodera per wtyczka (wybór poziomu mip/warstwy DDS): rozszerza istniejący wpis w tabeli luk 0.8.0.
+- Per-plugin decoder options (choosing the DDS mip level/layer): extends the existing entry in the 0.8.0 gap table.
