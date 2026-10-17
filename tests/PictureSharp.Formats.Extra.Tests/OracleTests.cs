@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using PictureSharp.Formats.Dds;
 using PictureSharp.Formats.Pnm;
 using PictureSharp.Formats.Qoi;
 using PictureSharp.Formats.Tga;
@@ -28,6 +29,8 @@ public sealed class OracleTests
         ("tga-rgb-rle", new TgaEncoderOptions(), false, false),
         ("tga-rgba-rle-top", new TgaEncoderOptions { Origin = TgaOrigin.TopLeft }, true, false),
         ("tga-gray-rle", new TgaEncoderOptions(), false, true),
+        ("dds-bgra", new DdsEncoderOptions(), true, false),
+        ("dds-bgrx", new DdsEncoderOptions { PixelFormat = DdsPixelFormat.Bgrx32 }, false, false),
     ];
 
     [Test]

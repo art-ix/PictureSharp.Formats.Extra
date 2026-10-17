@@ -16,7 +16,7 @@ runtime na każdej platformie). Rdzeń zrezygnuje z tej reguły w przyszłości.
 | Wersja | Zakres | Status |
 | --- | --- | --- |
 | 0.1.0 | Szkielet repo, QOI, PNM, TGA (odczyt i zapis) | W toku: kod i testy gotowe (commit b891c11), bez CI i wydania |
-| 0.2.0 | DDS: DX9/DX10, nieskompresowane, BC1–BC5, BC7, BC6H; zapis BGRA8/BGRX8 | Planowana |
+| 0.2.0 | DDS: DX9/DX10, nieskompresowane, BC1–BC5, BC7, BC6H; zapis BGRA8/BGRX8 | W toku: kod i testy gotowe (2026-10-17), bez commita i wydania |
 | 0.3.0 | KTX 1 i KTX 2 (odczyt): nieskompresowane i BC1–BC7/BC6H z dekoderów DDS | Planowana |
 | 0.4.0 | PSD/PSB (odczyt obrazu scalonego) | Planowana |
 | 0.5.0 | SGI (odczyt i zapis), Sun Raster (odczyt), XBM (odczyt i zapis), XPM (odczyt) | Planowana |
@@ -51,6 +51,26 @@ Pozostało do DoD:
 - Dekodery bloków BC1–BC5, BC7, BC6H (→ 8 bit z obcięciem do [0, 1]); skalarne, SIMD tylko z testem równości.
 - DoD: piksele = Pillow (BC1–BC5, BC7) i dekoder referencyjny (bcdec) dla BC6H; zapis BGRA8 round-trip; próbki
   BC6H/BC7 z `texconv`/`nvcompress` lub external po zgodzie użytkownika.
+
+Zrobione (2026-10-17):
+- `DdsFormat`, `DdsEncoderOptions` (`DdsPixelFormat` Auto/Bgra32/Bgrx32), skróty `SaveAsDds`/`ToDds`/`ImageFormat.Dds`;
+  dekodery bloków w `Common/BlockCompression/` (do ponownego użycia w KTX).
+- DX9: maski RGB/luminancja/alfa 8–32 bit (skalowanie jak Pillow `int(v / max * 255)`), L8, LA8, paleta P8, FourCC
+  DXT1–DXT5 (DXT2/DXT4 z odwróceniem premultiplikacji), ATI1/ATI2, BC4U/BC4S/BC5U/BC5S. DX10: BC1–BC7, BC6H UF16/SF16,
+  RGBA8/BGRA8/BGRX8 (UNORM, SRGB, TYPELESS), B5G6R5, B5G5R5A1, B4G4R4A4, R10G10B10A2, R8, R8G8, A8; tryb alfy DX10
+  (premultiplied, opaque). Float, YUV, ASTC, ETC → `NotSupportedException`.
+- Zachowanie jak Pillow 10.2.0: BC1 z bitową replikacją 565 i dzieleniem obcinającym, BC4/BC5 SNORM przez +128,
+  niebieski 128 w BC5 SNORM, zarezerwowany tryb BC7 → nieprzezroczysta czerń. BC6H według specyfikacji (jak bcdec):
+  Pillow interpoluje bez `+32` i nie rozszerza znaku po transformacji w trybach z deltami (sprawdzone emulacją: po
+  odtworzeniu obu odstępstw wynik = Pillow we wszystkich 14 trybach).
+- Korpus 41 plików DDS: Pillow, ImageMagick (DXT1/3/5 z mipmapami), losowe bloki z równomiernym rozkładem trybów
+  BC6H/BC7 (129×127, częściowe bloki), cube map, tablica DX10, układy masek; referencje: Pillow, „pillow-dx9” (nagłówek
+  DX10 zamieniony na równoważny DX9 dla formatów, których Pillow nie czyta z DX10) i bcdec dla BC6H
+  (`tests/assets/bc6h_reference.c`, nagłówek w `reference/bcdec/`, pobrany za zgodą użytkownika).
+- Testy: 513/513 (w tym Slow i Oracle; Oracle zapisu DDS BGRA/BGRX czytanego przez Pillow).
+
+Pozostało do DoD: próbki BC6H/BC7 z prawdziwych enkoderów (`texconv`/`nvcompress`, brak na tej maszynie; korpus
+pokrywa wszystkie tryby losowymi blokami), smoke test trimming/AOT razem z 0.1.0, commit, release notes.
 
 ## 0.3.0 — KTX i KTX2
 

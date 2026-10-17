@@ -1,4 +1,250 @@
 {
+ "dds/a2b10g10r10.dds": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "c66046cee9bad76b6affec93b7798f72ed2e79c7da149038f3cf59b97fadd476",
+  "width": 37
+ },
+ "dds/argb1555.dds": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "c7dadc4a83c597b2d881acd8ad0574f22867004b27bb65228e54513bb75ffb01",
+  "width": 37
+ },
+ "dds/argb4444.dds": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "f80c4d171dc7f58a0b35e01f16d5bb4f1898fe4094a7189b7f046e1b1daf99f3",
+  "width": 37
+ },
+ "dds/array-bc7-dx10.dds": {
+  "height": 8,
+  "oracle": "pillow",
+  "sha256": "3d32f85402b3aaa8b033e3ebf87438ef26cb992e96df0dc08a6a97ff94451df0",
+  "width": 8
+ },
+ "dds/b4g4r4a4-dx10.dds": {
+  "height": 23,
+  "oracle": "pillow-dx9",
+  "sha256": "f80c4d171dc7f58a0b35e01f16d5bb4f1898fe4094a7189b7f046e1b1daf99f3",
+  "width": 37
+ },
+ "dds/b5g5r5a1-dx10.dds": {
+  "height": 23,
+  "oracle": "pillow-dx9",
+  "sha256": "c7dadc4a83c597b2d881acd8ad0574f22867004b27bb65228e54513bb75ffb01",
+  "width": 37
+ },
+ "dds/b5g6r5-dx10.dds": {
+  "height": 23,
+  "oracle": "pillow-dx9",
+  "sha256": "03ec75ad0f6840c59a952dabbdbbd3bf0eb5b68a2b0e7cb0864c06f082a807bf",
+  "width": 37
+ },
+ "dds/bc1-random-dx10.dds": {
+  "height": 127,
+  "oracle": "pillow",
+  "sha256": "6f8049661b57f63ed0616b72d58c7d2fd0e0f12c26f5dee29a2d55b10d3a6494",
+  "width": 129
+ },
+ "dds/bc1-random-srgb-dx10.dds": {
+  "height": 127,
+  "oracle": "pillow-dx9",
+  "sha256": "da1a10306d51857528125b9a05281f50c5fa852b7f574f443023aadcc8e24833",
+  "width": 129
+ },
+ "dds/bc1-random.dds": {
+  "height": 127,
+  "oracle": "pillow",
+  "sha256": "07dd52832286bb8ca8160856efe6ae33c2055e01da21d6ed125a54045434b96f",
+  "width": 129
+ },
+ "dds/bc2-random-dx10.dds": {
+  "height": 127,
+  "oracle": "pillow-dx9",
+  "sha256": "61953cb14f531e956397e3455585e8aa143ff686570187d371d3efce1049b6b4",
+  "width": 129
+ },
+ "dds/bc2-random.dds": {
+  "height": 127,
+  "oracle": "pillow",
+  "sha256": "28c55502e790fa10d83cb0d29f216095d6c119222b967fa1ef820a043a0cf333",
+  "width": 129
+ },
+ "dds/bc3-random-dx10.dds": {
+  "height": 127,
+  "oracle": "pillow-dx9",
+  "sha256": "c002e9d575e6548c93b88f54fcb64d81e87c00ffa0ad77bb4034de51aa6ee58c",
+  "width": 129
+ },
+ "dds/bc3-random.dds": {
+  "height": 127,
+  "oracle": "pillow",
+  "sha256": "c5524f886c5dd5dc4ea4478c1133d1a7fd64d3709f885c5800641601ffd558f3",
+  "width": 129
+ },
+ "dds/bc4-random-ati1.dds": {
+  "height": 127,
+  "oracle": "pillow",
+  "sha256": "990665c7dd168bb689e154c9b47899f5a6e3387e069d3fd1c7dfdf48b7974af6",
+  "width": 129
+ },
+ "dds/bc4-random-dx10.dds": {
+  "height": 127,
+  "oracle": "pillow",
+  "sha256": "48d51715e8cb5a35096965d62e42fab8386effb32016175088f35fbae8133e36",
+  "width": 129
+ },
+ "dds/bc5-random-ati2.dds": {
+  "height": 127,
+  "oracle": "pillow",
+  "sha256": "c65cc58956f7bee52ae0e40fb01165ff8727503ad5781b52482a2c4880d98c88",
+  "width": 129
+ },
+ "dds/bc5-random-dx10.dds": {
+  "height": 127,
+  "oracle": "pillow",
+  "sha256": "153161c926c92e0642ef16e6ebca0c690ae84e1f74c8fddf63e192ba343627a5",
+  "width": 129
+ },
+ "dds/bc5s-random-dx10.dds": {
+  "height": 127,
+  "oracle": "pillow",
+  "sha256": "6b5767ee2188311ca9ecbd3742a00d3a50a5d40d4bb3065d74f454964ae3a9f3",
+  "width": 129
+ },
+ "dds/bc5s-random.dds": {
+  "height": 127,
+  "oracle": "pillow",
+  "sha256": "e035afc8ebf9d41620e32a04c70f5b9c41c57bb3eef2e78199a6505ea83fb179",
+  "width": 129
+ },
+ "dds/bc6h-random.dds": {
+  "height": 127,
+  "oracle": "bcdec",
+  "sha256": "d822ce12c8f023dbc7593c2c2b8aca4738eef36064daf44175536f335de0a73d",
+  "width": 129
+ },
+ "dds/bc6h-signed-random.dds": {
+  "height": 127,
+  "oracle": "bcdec",
+  "sha256": "9738afdd8b35de72f149328e23a3614158f7a5ee2c0e8ed06b7e3fc8e7991946",
+  "width": 129
+ },
+ "dds/bc7-random-srgb.dds": {
+  "height": 127,
+  "oracle": "pillow",
+  "sha256": "9ad09f218fbebd7e004d2e1bd6703be5381edff94c6fdc069a47cd7f0e2a82ee",
+  "width": 129
+ },
+ "dds/bc7-random.dds": {
+  "height": 127,
+  "oracle": "pillow",
+  "sha256": "94f898a6c04f20ba49e629e69e0ec96a29c7273bc72f85c33389322ed1e28363",
+  "width": 129
+ },
+ "dds/bgra8-dx10.dds": {
+  "height": 23,
+  "oracle": "pillow-dx9",
+  "sha256": "6827c4942eea46fff7cb0d433227fb8799c20ae3ff270302bc9bb592742ab681",
+  "width": 37
+ },
+ "dds/bgrx8-dx10.dds": {
+  "height": 23,
+  "oracle": "pillow-dx9",
+  "sha256": "cec62b56ce1706fc38c68615ef77d15cfc49476368f494cced18c0434d8f28ab",
+  "width": 37
+ },
+ "dds/cubemap-dxt1.dds": {
+  "height": 16,
+  "oracle": "pillow",
+  "sha256": "fe8e1613ca6d39e9fd21190fe8cc492729ca672e1b562f3cfdf96fae1311af17",
+  "width": 16
+ },
+ "dds/gray.dds": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "0184f8c7b689eba6db127da2e888332c3090dec5a96973fddb58489d82878325",
+  "width": 37
+ },
+ "dds/graya.dds": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "0283b1867e76e2981fbc3ee5275a0f82094fb62c6b98d87134308bd74f28dcbe",
+  "width": 37
+ },
+ "dds/im-dxt1-mipmaps.dds": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "4fcdad9f5cd48ba580a75fedca0026ac8c24ba12d2f6fa092b48785fc6e94962",
+  "width": 37
+ },
+ "dds/im-dxt3.dds": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "abb2e9f5bc547b04f8f41257b9d8dabd6205c905847fc9c8279b691a4186f98c",
+  "width": 37
+ },
+ "dds/im-dxt5-mipmaps.dds": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "abb2e9f5bc547b04f8f41257b9d8dabd6205c905847fc9c8279b691a4186f98c",
+  "width": 37
+ },
+ "dds/im-rgba.dds": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "6827c4942eea46fff7cb0d433227fb8799c20ae3ff270302bc9bb592742ab681",
+  "width": 37
+ },
+ "dds/palette8.dds": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "809e332a9423e2eea6ff54f70e18c1938bb8996ce2e4e39908ce20b16103f5e4",
+  "width": 37
+ },
+ "dds/r10g10b10a2-dx10.dds": {
+  "height": 23,
+  "oracle": "pillow-dx9",
+  "sha256": "c66046cee9bad76b6affec93b7798f72ed2e79c7da149038f3cf59b97fadd476",
+  "width": 37
+ },
+ "dds/rgb.dds": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "cec62b56ce1706fc38c68615ef77d15cfc49476368f494cced18c0434d8f28ab",
+  "width": 37
+ },
+ "dds/rgb332.dds": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "e6ea9917ca71f7b75f8acfe3c2fb899242ba31a8b444de9395ff8f0476b79f41",
+  "width": 37
+ },
+ "dds/rgb565.dds": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "03ec75ad0f6840c59a952dabbdbbd3bf0eb5b68a2b0e7cb0864c06f082a807bf",
+  "width": 37
+ },
+ "dds/rgba.dds": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "6827c4942eea46fff7cb0d433227fb8799c20ae3ff270302bc9bb592742ab681",
+  "width": 37
+ },
+ "dds/rgba8-dx10.dds": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "6827c4942eea46fff7cb0d433227fb8799c20ae3ff270302bc9bb592742ab681",
+  "width": 37
+ },
+ "dds/xrgb8888.dds": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "cec62b56ce1706fc38c68615ef77d15cfc49476368f494cced18c0434d8f28ab",
+  "width": 37
+ },
  "pnm/bitmap-plain.pbm": {
   "height": 23,
   "oracle": "pillow",

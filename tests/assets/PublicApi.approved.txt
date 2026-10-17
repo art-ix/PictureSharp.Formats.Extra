@@ -1,3 +1,37 @@
+PictureSharp.Formats.Dds.DdsEncoderOptions
+  Boolean Equals(PictureSharp.EncoderOptions)
+  Boolean Equals(PictureSharp.Formats.Dds.DdsEncoderOptions)
+  Boolean Equals(System.Object)
+  Boolean op_Equality(PictureSharp.Formats.Dds.DdsEncoderOptions, PictureSharp.Formats.Dds.DdsEncoderOptions)
+  Boolean op_Inequality(PictureSharp.Formats.Dds.DdsEncoderOptions, PictureSharp.Formats.Dds.DdsEncoderOptions)
+  Int32 GetHashCode()
+  PictureSharp.Formats.Dds.DdsEncoderOptions <Clone>$()
+  PictureSharp.Formats.Dds.DdsPixelFormat PixelFormat
+  PictureSharp.Formats.Dds.DdsPixelFormat get_PixelFormat()
+  PictureSharp.ImageFormat Format
+  PictureSharp.ImageFormat get_Format()
+  System.String ToString()
+  Void .ctor()
+  Void set_PixelFormat(PictureSharp.Formats.Dds.DdsPixelFormat)
+PictureSharp.Formats.Dds.DdsFormat
+  Boolean IsSupported(System.ReadOnlySpan`1[System.Byte])
+  Int32 HeaderSize
+  Int32 get_HeaderSize()
+  PictureSharp.Formats.IImageFormatDecoder Decoder
+  PictureSharp.Formats.IImageFormatDecoder get_Decoder()
+  PictureSharp.Formats.IImageFormatEncoder Encoder
+  PictureSharp.Formats.IImageFormatEncoder get_Encoder()
+  PictureSharp.ImageFormat Format
+  PictureSharp.ImageFormat get_Format()
+  Void .ctor()
+PictureSharp.Formats.Dds.DdsImageExtensions
+  Byte[] ToDds(PictureSharp.Image, PictureSharp.Formats.Dds.DdsEncoderOptions)
+  PictureSharp.ImageFormat get_Dds()
+  System.Threading.Tasks.Task SaveAsDdsAsync(PictureSharp.Image, System.IO.Stream, PictureSharp.Formats.Dds.DdsEncoderOptions, System.Threading.CancellationToken)
+  System.Threading.Tasks.Task SaveAsDdsAsync(PictureSharp.Image, System.String, PictureSharp.Formats.Dds.DdsEncoderOptions, System.Threading.CancellationToken)
+  Void SaveAsDds(PictureSharp.Image, System.IO.Stream, PictureSharp.Formats.Dds.DdsEncoderOptions)
+  Void SaveAsDds(PictureSharp.Image, System.String, PictureSharp.Formats.Dds.DdsEncoderOptions)
+PictureSharp.Formats.Dds.DdsPixelFormat
 PictureSharp.Formats.Extra.ExtraFormats
   PictureSharp.ImageConfigurationBuilder AddExtraFormats(PictureSharp.ImageConfigurationBuilder)
   System.Collections.Generic.IReadOnlyList`1[PictureSharp.Formats.IImageFormatModule] CreateModules()

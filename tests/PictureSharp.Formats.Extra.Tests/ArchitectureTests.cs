@@ -11,7 +11,7 @@ public sealed class ArchitectureTests
     private static readonly Assembly Plugin = typeof(QoiFormat).Assembly;
 
     private static readonly string[] PublicNamespaces =
-        ["PictureSharp.Formats.Extra", "PictureSharp.Formats.Pnm", "PictureSharp.Formats.Qoi", "PictureSharp.Formats.Tga"];
+        ["PictureSharp.Formats.Dds", "PictureSharp.Formats.Extra", "PictureSharp.Formats.Pnm", "PictureSharp.Formats.Qoi", "PictureSharp.Formats.Tga"];
 
     [Test]
     public async Task Plugin_ReferencesOnlyPictureSharp_AndTheRuntime()

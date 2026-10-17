@@ -7,8 +7,9 @@
 | QOI | `.qoi` | RGB, RGBA | RGB, RGBA |
 | Netpbm | `.pbm` `.pgm` `.ppm` `.pnm` `.pam` | P1–P7, plain and binary, maxval up to 65535 | PBM, PGM, PPM (plain or binary), PAM |
 | TGA | `.tga` `.icb` `.vda` `.vst` | colour-mapped, true-colour, greyscale; RLE; any origin | 8-bit grey, 24-bit, 32-bit; RLE |
+| DDS | `.dds` | DX9 and DX10 headers; BC1–BC5, BC6H, BC7; bit-mask layouts (8–32 bit), luminance, 8-bit palette | 32-bit BGRA or BGRX |
 
-Planned: DDS (BC1–BC7). TIFF will be a separate package, PictureSharp.Tiff.
+Planned: KTX/KTX2, PSD/PSB, SGI, Sun Raster, XBM/XPM. TIFF is a separate package, PictureSharp.Tiff.
 
 ```bash
 dotnet add package PictureSharp.Formats.Extra
@@ -38,6 +39,11 @@ through `DecoderOptions.Configuration` and `EncoderOptions.Configuration`.
 - TGA has no signature, so detection checks the header fields. Alpha follows the bit depth (32-bit pixels, 16-bit
   greyscale, 32-bit colour maps, and 16-bit colour only with a declared alpha bit). A TGA 2.0 extension area can
   declare no alpha or premultiplied alpha.
+- DDS decodes only the first surface: mip level 0 of the first array element, cube face or volume slice. BC1–BC5,
+  BC7 and the bit-mask layouts decode exactly as in Pillow 10.2.0 (signed BC4/BC5 are shifted by +128, as Pillow does).
+  BC6H follows the D3D11 spec, matching bcdec; half floats are clamped to [0, 1] and truncated after × 255. DXT2/DXT4
+  and the DX10 premultiplied alpha mode are unpremultiplied. Float, YUV, ASTC and ETC formats throw
+  `NotSupportedException`.
 - Encoders keep the first frame and write no ICC, EXIF or XMP blocks. PBM, PGM and PPM drop alpha.
 - Corrupt input throws `ImageFormatException`, valid input with unsupported features throws `NotSupportedException`,
   and `DecoderOptions.MaxPixels` is checked before any pixels are allocated.

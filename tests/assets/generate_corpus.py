@@ -2,7 +2,9 @@
 """Generates the deterministic test corpus in tests/assets/corpus.
 
 Sources are synthetic. Variants come from Pillow 10.2.0 and ImageMagick `convert`; small writers below produce the
-layouts no tool writes (QOI, unusual PNM maxvals and comments, 15/16-bit and right-to-left TGA, RLE across rows).
+layouts no tool writes (QOI, unusual PNM maxvals and comments, 15/16-bit and right-to-left TGA, RLE across rows, DDS
+headers for every BC format). DDS block data is random with the BC6H/BC7 mode bits chosen evenly, so every mode,
+partition and anchor is decoded; no encoder for BC4-BC7 is needed.
 The QOI writer is a line-by-line port of qoi.h qoi_encode, so its files also check the C# encoder byte for byte.
 
 Run with:  python3 -I tests/assets/generate_corpus.py
@@ -268,6 +270,138 @@ def tga(s):
     tga_custom("palette16-first4.tga", 1, w, h, 8, 0x20, (idx + 4).astype(np.uint8).tobytes(), cmap16, (4, 16, 16))
 
 
+# --------------------------------------------------------------------------- DDS
+
+DDPF_ALPHAPIXELS, DDPF_FOURCC, DDPF_PAL8, DDPF_RGB = 0x1, 0x4, 0x20, 0x40
+
+
+def dds_custom(name, w, h, body, fourcc=None, dxgi=None, masks=None, bitcount=0, flags=0, mipmaps=0, caps2=0, dx10_extra=(3, 0, 1, 0)):
+    if dxgi is not None:
+        fourcc = b"DX10"
+    if fourcc is not None:
+        flags |= DDPF_FOURCC
+    pf = struct.pack("<4I", 32, flags, struct.unpack("<I", fourcc)[0] if fourcc else 0, bitcount) + struct.pack("<4I", *(masks or (0, 0, 0, 0)))
+    caps = 0x1000 | (0x400008 if mipmaps > 1 else 0) | (0x8 if caps2 else 0)
+    header = b"DDS " + struct.pack("<7I", 124, 0x1007 | (0x20000 if mipmaps > 1 else 0), h, w, 0, 0, mipmaps) + b"\0" * 44 + pf
+    header += struct.pack("<5I", caps, caps2, 0, 0, 0)
+    if dxgi is not None:
+        header += struct.pack("<5I", dxgi, *dx10_extra)
+    open(path("dds", name), "wb").write(header + body)
+
+
+def random_blocks(rng, count, size):
+    return rng.integers(0, 256, (count, size), dtype=np.uint8)
+
+
+def bc7_blocks(rng, count):
+    blocks = random_blocks(rng, count, 16)
+    for i in range(count):
+        mode = i % 9                       # 8 = the reserved mode (first byte zero)
+        if mode == 8:
+            blocks[i, 0] = 0
+        else:
+            blocks[i, 0] = (blocks[i, 0] & ~((1 << (mode + 1)) - 1) | (1 << mode)) & 0xFF
+    return blocks.tobytes()
+
+
+BC6H_MODES = [0, 1, 2, 6, 10, 14, 18, 22, 26, 30, 3, 7, 11, 15, 19, 23, 27, 31]   # the last four are reserved
+
+
+def bc6h_blocks(rng, count):
+    blocks = random_blocks(rng, count, 16)
+    for i in range(count):
+        mode = BC6H_MODES[i % len(BC6H_MODES)]
+        bits = 2 if mode < 2 else 5
+        blocks[i, 0] = (blocks[i, 0] & ~((1 << bits) - 1) | mode) & 0xFF
+    return blocks.tobytes()
+
+
+def bc1_blocks(rng, count):
+    """Random BC1 blocks, every second one with c0 <= c1 (three colours and transparency)."""
+    blocks = random_blocks(rng, count, 8)
+    for i in range(0, count, 2):
+        c0, c1 = blocks[i, 0] | blocks[i, 1] << 8, blocks[i, 2] | blocks[i, 3] << 8
+        if int(c0) > int(c1):
+            blocks[i, [0, 1, 2, 3]] = blocks[i, [2, 3, 0, 1]]
+    return blocks.tobytes()
+
+
+def masked(pixels, masks, bitcount):
+    """Packs RGBA pixels into words with the given masks (values scaled down by truncation)."""
+    out = bytearray()
+    for r, g, b, a in pixels.reshape(-1, 4):
+        word = 0
+        for value, mask in zip((r, g, b, a), masks):
+            if mask:
+                shift = (mask & -mask).bit_length() - 1
+                word |= (int(value) * (mask >> shift) // 255) << shift
+        out += word.to_bytes(bitcount // 8, "little")
+    return bytes(out)
+
+
+def dds(s):
+    rng = np.random.default_rng(11)
+    photo, rgba = Image.fromarray(s["photo"]), Image.fromarray(s["rgba"], "RGBA")
+    photo.save(path("dds", "rgb.dds"))
+    rgba.save(path("dds", "rgba.dds"))
+    Image.fromarray(s["gray"]).save(path("dds", "gray.dds"))
+    Image.fromarray(s["graya"], "LA").save(path("dds", "graya.dds"))
+
+    # ImageMagick writes mipmaps by default: only level 0 is decoded.
+    run("convert", path("src", "photo.png"), "-define", "dds:compression=dxt1", path("dds", "im-dxt1-mipmaps.dds"))
+    run("convert", path("src", "rgba.png"), "-define", "dds:compression=dxt5", path("dds", "im-dxt5-mipmaps.dds"))
+    run("convert", path("src", "rgba.png"), "-define", "dds:compression=dxt3", path("dds", "im-dxt3.dds"))
+    run("convert", path("src", "rgba.png"), "-define", "dds:compression=none", "-define", "dds:mipmaps=0", path("dds", "im-rgba.dds"))
+
+    w, h = 129, 127                        # 33 x 32 blocks, partial blocks on two edges
+    n = ((w + 3) // 4) * ((h + 3) // 4)
+    dds_custom("bc1-random.dds", w, h, bc1_blocks(rng, n), fourcc=b"DXT1")
+    dds_custom("bc1-random-dx10.dds", w, h, bc1_blocks(rng, n), dxgi=71)
+    dds_custom("bc1-random-srgb-dx10.dds", w, h, bc1_blocks(rng, n), dxgi=72)
+    dds_custom("bc2-random.dds", w, h, random_blocks(rng, n, 16).tobytes(), fourcc=b"DXT3")
+    dds_custom("bc2-random-dx10.dds", w, h, random_blocks(rng, n, 16).tobytes(), dxgi=74)
+    dds_custom("bc3-random.dds", w, h, random_blocks(rng, n, 16).tobytes(), fourcc=b"DXT5")
+    dds_custom("bc3-random-dx10.dds", w, h, random_blocks(rng, n, 16).tobytes(), dxgi=77)
+    dds_custom("bc4-random-ati1.dds", w, h, random_blocks(rng, n, 8).tobytes(), fourcc=b"ATI1")
+    dds_custom("bc4-random-dx10.dds", w, h, random_blocks(rng, n, 8).tobytes(), dxgi=80)
+    dds_custom("bc5-random-ati2.dds", w, h, random_blocks(rng, n, 16).tobytes(), fourcc=b"ATI2")
+    dds_custom("bc5-random-dx10.dds", w, h, random_blocks(rng, n, 16).tobytes(), dxgi=83)
+    dds_custom("bc5s-random.dds", w, h, random_blocks(rng, n, 16).tobytes(), fourcc=b"BC5S")
+    dds_custom("bc5s-random-dx10.dds", w, h, random_blocks(rng, n, 16).tobytes(), dxgi=84)
+    dds_custom("bc6h-random.dds", w, h, bc6h_blocks(rng, n), dxgi=95)
+    dds_custom("bc6h-signed-random.dds", w, h, bc6h_blocks(rng, n), dxgi=96)
+    dds_custom("bc7-random.dds", w, h, bc7_blocks(rng, n), dxgi=98)
+    dds_custom("bc7-random-srgb.dds", w, h, bc7_blocks(rng, n), dxgi=99)
+
+    # A cube map with six DXT1 faces and two mip levels: the first face's level 0 is decoded.
+    faces = b"".join(bc1_blocks(rng, 16) + bc1_blocks(rng, 4) for _ in range(6))
+    dds_custom("cubemap-dxt1.dds", 16, 16, faces, fourcc=b"DXT1", mipmaps=2, caps2=0xFE00)
+    # A texture array of three BC7 elements.
+    dds_custom("array-bc7-dx10.dds", 8, 8, bc7_blocks(rng, 12), dxgi=98, dx10_extra=(3, 0, 3, 0))
+
+    # Uncompressed layouts described by masks, DX9 and DX10.
+    a = s["rgba"]
+    ph, pw, _ = a.shape
+    opaque = rgba_of(s["photo"])
+    dds_custom("rgb565.dds", pw, ph, masked(opaque, (0xF800, 0x7E0, 0x1F, 0), 16), masks=(0xF800, 0x7E0, 0x1F, 0), bitcount=16, flags=DDPF_RGB)
+    dds_custom("argb1555.dds", pw, ph, masked(a, (0x7C00, 0x3E0, 0x1F, 0x8000), 16), masks=(0x7C00, 0x3E0, 0x1F, 0x8000), bitcount=16, flags=DDPF_RGB | DDPF_ALPHAPIXELS)
+    dds_custom("argb4444.dds", pw, ph, masked(a, (0xF00, 0xF0, 0xF, 0xF000), 16), masks=(0xF00, 0xF0, 0xF, 0xF000), bitcount=16, flags=DDPF_RGB | DDPF_ALPHAPIXELS)
+    dds_custom("rgb332.dds", pw, ph, masked(opaque, (0xE0, 0x1C, 0x3, 0), 8), masks=(0xE0, 0x1C, 0x3, 0), bitcount=8, flags=DDPF_RGB)
+    dds_custom("a2b10g10r10.dds", pw, ph, masked(a, (0x3FF, 0xFFC00, 0x3FF00000, 0xC0000000), 32), masks=(0x3FF, 0xFFC00, 0x3FF00000, 0xC0000000), bitcount=32, flags=DDPF_RGB | DDPF_ALPHAPIXELS)
+    dds_custom("xrgb8888.dds", pw, ph, masked(opaque, (0xFF0000, 0xFF00, 0xFF, 0), 32), masks=(0xFF0000, 0xFF00, 0xFF, 0), bitcount=32, flags=DDPF_RGB)
+    dds_custom("bgra8-dx10.dds", pw, ph, masked(a, (0xFF0000, 0xFF00, 0xFF, 0xFF000000), 32), dxgi=87)
+    dds_custom("bgrx8-dx10.dds", pw, ph, masked(a, (0xFF0000, 0xFF00, 0xFF, 0xFF000000), 32), dxgi=88)
+    dds_custom("rgba8-dx10.dds", pw, ph, masked(a, (0xFF, 0xFF00, 0xFF0000, 0xFF000000), 32), dxgi=28)
+    dds_custom("b5g6r5-dx10.dds", pw, ph, masked(opaque, (0xF800, 0x7E0, 0x1F, 0), 16), dxgi=85)
+    dds_custom("b5g5r5a1-dx10.dds", pw, ph, masked(a, (0x7C00, 0x3E0, 0x1F, 0x8000), 16), dxgi=86)
+    dds_custom("b4g4r4a4-dx10.dds", pw, ph, masked(a, (0xF00, 0xF0, 0xF, 0xF000), 16), dxgi=115)
+    dds_custom("r10g10b10a2-dx10.dds", pw, ph, masked(a, (0x3FF, 0xFFC00, 0x3FF00000, 0xC0000000), 32), dxgi=24)
+
+    # An 8-bit palette with 256 RGBA entries.
+    palette = rng.integers(0, 256, 1024, dtype=np.uint8).tobytes()
+    dds_custom("palette8.dds", pw, ph, palette + rng.integers(0, 256, pw * ph, dtype=np.uint8).tobytes(), bitcount=8, flags=DDPF_PAL8)
+
+
 def main():
     shutil.rmtree(CORPUS, ignore_errors=True)
     os.makedirs(SRC)
@@ -275,6 +409,7 @@ def main():
     qoi(s)
     pnm(s)
     tga(s)
+    dds(s)
     shutil.rmtree(SRC)
 
 
