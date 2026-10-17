@@ -1,18 +1,18 @@
 # PictureSharp.Formats.Extra: plan
 
-Wtyczka z dodatkowymi formatami dla PictureSharp: QOI, PNM i TGA (odczyt i zapis), DDS oraz TIFF (tylko odczyt).
-Osobne repozytorium i własny SemVer, wzorowane na `PictureSharp.Heif`. Zależność wyłącznie od publicznego pakietu
-`PictureSharp` (minimum 0.7.1). Jedyny wyjątek od zasady „bez kopii kodu rdzenia”: kopia dekompresji zlib dla TIFF
-(decyzja użytkownika z 2026-10-17), synchronizowana skryptem.
+Wtyczka z dodatkowymi formatami dla PictureSharp: QOI, PNM i TGA (odczyt i zapis) oraz DDS. Osobne repozytorium
+i własny SemVer, wzorowane na `PictureSharp.Heif`. Zależność wyłącznie od publicznego pakietu `PictureSharp`
+(minimum 0.7.1), bez kopii kodu rdzenia.
+
+TIFF przeniesiono do osobnego pakietu `PictureSharp.Tiff` (repozytorium `../PictureSharp.Tiff`, decyzja użytkownika
+z 2026-10-17): to większy format dla innych odbiorców, z kopią dekompresji zlib z rdzenia i własnym rytmem wydań.
 
 ## Wersje
 
 | Wersja | Zakres | Status |
 | --- | --- | --- |
-| 0.1.0 | Szkielet repo, QOI, PNM, TGA (odczyt i zapis) | W toku: kod i testy gotowe, brak commita i wydania |
+| 0.1.0 | Szkielet repo, QOI, PNM, TGA (odczyt i zapis) | W toku: kod i testy gotowe (commit b891c11), bez CI i wydania |
 | 0.2.0 | DDS: DX9/DX10, nieskompresowane, BC1–BC5, BC7, BC6H; zapis BGRA8/BGRX8 | Planowana |
-| 0.3.0 | TIFF podstawowy: IFD, paski i kafle, None/PackBits/LZW/Deflate, predyktor 2, gray/palette/RGB(A) 8/16 bit | Planowana |
-| 0.4.0 | TIFF rozszerzony: JPEG (7), CCITT G3/G4, predyktor 3 i float, CMYK, YCbCr, associated alpha, EXIF, BigTIFF | Planowana |
 
 ## 0.1.0 — QOI, PNM, TGA
 
@@ -31,7 +31,7 @@ Zrobione:
 
 Pozostało do DoD:
 - Wyrocznia `qoi.h` (oryginalny `qoiconv`) zamiast portu w Pythonie — wymaga zgody na pobranie `qoi.h` do `reference/`.
-- CI na GitHubie (workflow gotowy, nieuruchomiony), pierwszy commit, release notes i decyzja o publikacji NuGet.
+- CI na GitHubie (workflow gotowy, nieuruchomiony; brak remote), release notes i decyzja o publikacji NuGet.
 - Smoke test konsumenta z trimmingiem i Native AOT (wzór: `verify-package-consumer.sh` rdzenia).
 
 ## 0.2.0 — DDS
@@ -41,15 +41,6 @@ Pozostało do DoD:
 - DoD: piksele = Pillow (BC1–BC5, BC7) i dekoder referencyjny (bcdec) dla BC6H; zapis BGRA8 round-trip; próbki
   BC6H/BC7 z `texconv`/`nvcompress` lub external po zgodzie użytkownika.
 
-## 0.3.0 i 0.4.0 — TIFF (tylko odczyt)
-
-- Pierwsza strona w pełnej rozdzielczości (pomija IFD z bitem reduced-resolution); `ContainerItemCount` = liczba stron.
-- LZW: MSB-first z „early change” i zgodność ze starym LZW LSB-first (libtiff `tif_lzw.c`). Deflate: kopia `Inflater`
-  rdzenia + `scripts/sync-compression.sh` (`--check` w CI). JPEG (7): `JPEGTables` + pasek → `DecodeEmbedded`.
-- OJPEG, JBIG, LZMA, ZSTD, WebP-in-TIFF, Lab/LogLuv → `NotSupportedException`.
-- DoD: korpus z `tiffcp` (`-c none|packbits|lzw:2|zip:2|jpeg|g3|g4`, `-t`, `-p separate`) i ImageMagick; piksele =
-  Pillow; fuzz IFD (pętle, offsety poza plikiem, ogromne `StripByteCounts`).
-
 ## Zgłoszenia do rdzenia
 
-- Opcje dekodera per wtyczka (wybór strony TIFF, poziomu mip/warstwy DDS): rozszerza istniejący wpis w tabeli luk 0.8.0.
+- Opcje dekodera per wtyczka (wybór poziomu mip/warstwy DDS): rozszerza istniejący wpis w tabeli luk 0.8.0.

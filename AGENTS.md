@@ -1,7 +1,7 @@
 # Working on PictureSharp.Formats.Extra
 
 PictureSharp.Formats.Extra is a format plugin for [PictureSharp](https://github.com/art-ix/PictureSharp) that adds QOI,
-Netpbm and TGA (and later DDS and read-only TIFF) entirely in C#. It is a separate repository and package with its own
+Netpbm and TGA (and later DDS) entirely in C#. It is a separate repository and package with its own
 version; it uses PictureSharp only through its public NuGet API.
 
 Before starting, read [plan.md](plan.md) to identify the current version and its definition of done (DoD), then read
@@ -17,9 +17,8 @@ go to the core repository's `plan.md` (sibling folder `../PictureSharp`).
   `Directory.Build.props`) and the BCL: no other `PackageReference`, native libraries, P/Invoke or
   `System.IO.Compression`. Use only public PictureSharp API; no `InternalsVisibleTo` or reflection. An architecture
   test checks this.
-- One deliberate exception, decided by the user: TIFF needs zlib inflate, so `Compression/` will hold a copy of the
-  core's `Inflater`, Huffman tables and `Adler32`, kept in sync by `scripts/sync-compression.sh` (with `--check` in
-  CI). Copy nothing else from the core.
+- Copy no code from the core. TIFF, which needs the core's zlib inflate, lives in the separate PictureSharp.Tiff
+  package (`../PictureSharp.Tiff`).
 - Do not use the `unsafe` keyword. Use `Span<T>`, `ref`, `Unsafe.Add` and `MemoryMarshal`.
 - Each format is a public `XxxFormat : IImageFormatModule` in `PictureSharp.Formats.<Format>`, with an
   `XxxEncoderOptions` record and extension blocks (`SaveAsXxx`, `ToXxx`, `ImageFormat.Xxx`). Codecs are `internal`.

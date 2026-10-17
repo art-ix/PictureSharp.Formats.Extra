@@ -8,7 +8,7 @@
 | Netpbm | `.pbm` `.pgm` `.ppm` `.pnm` `.pam` | P1–P7, plain and binary, maxval up to 65535 | PBM, PGM, PPM (plain or binary), PAM |
 | TGA | `.tga` `.icb` `.vda` `.vst` | colour-mapped, true-colour, greyscale; RLE; any origin | 8-bit grey, 24-bit, 32-bit; RLE |
 
-Planned: DDS (BC1–BC7) and TIFF (read only).
+Planned: DDS (BC1–BC7). TIFF will be a separate package, PictureSharp.Tiff.
 
 ```bash
 dotnet add package PictureSharp.Formats.Extra
