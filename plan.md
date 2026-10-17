@@ -18,12 +18,16 @@ every platform). The core will drop this rule in the future.
 | 0.2.0 | DDS: DX9/DX10, uncompressed, BC1–BC5, BC7, BC6H; BGRA8/BGRX8 writing | Done (268087c); released as part of v0.3.0 |
 | 0.3.0 | PSD/PSB (merged image, read only) | Done (f62011b); first GitHub release v0.3.0, not yet on NuGet |
 | 0.4.0 | SGI (read and write), Sun Raster (read), XBM (read and write), XPM (read) | Done (525fb10); VERSION 0.4.0, not released |
+| 0.5.0 | VTF (read), ICNS (read) | In progress: VTF decoder written (not yet in the corpus), ICNS not started |
 
 0.1.0 and 0.2.0 were never released on their own: the first release, v0.3.0, contains all three versions.
 
 User decision (2026-10-17): after DDS come PSD/PSB, SGI, Sun Raster and XBM/XPM. Out of scope: CUR (belongs in the
 core next to ICO), HDR formats (Radiance, OpenEXR — waiting for the HDR SPI), AVIF/JPEG XL/JPEG 2000 (separate
 packages like `PictureSharp.Heif`), BLP, FLI/FLC, DCX. KTX/KTX2 was dropped by user decision (2026-10-17).
+
+User decision (2026-10-17): 0.5.0 adds VTF and ICNS. PCX is built into the core (0.4.7). Doom/Quake graphics (WAD lumps
+without a signature, with an external palette) would need a separate WAD package, not decoders in this plugin.
 
 ## Release
 
@@ -150,6 +154,26 @@ upstream `COPYING` (written from the standard X11 licence).
 
 Every version adds its `PictureSharp.Formats.<Format>` namespace to `ArchitectureTests` and updates the API snapshot,
 the README and `ExtraFormats.AddExtraFormats`.
+
+## 0.5.0 — VTF, ICNS
+
+- VTF (Valve Texture Format, `.vtf`), read only: signature `VTF\0`, versions 7.0–7.5 (7.3+ with the resource
+  directory). Only the largest mip level of the first frame, face and slice; the low-resolution thumbnail is skipped.
+  Image formats: RGBA8888, ABGR8888, ARGB8888, BGRA8888, BGRX8888, RGB888, BGR888 (and the bluescreen variants as
+  opaque colours), RGB565, BGR565, BGRA4444, BGRA5551, BGRX5551, I8, IA88, A8, UV88, UVWQ8888, UVLX8888, RGBA16161616
+  (→ 8 bit with the documented rounding), DXT1, DXT1_ONEBITALPHA, DXT3, DXT5 (the existing BC decoders from
+  `Common/BlockCompression`). Float formats (RGBA16161616F, R32F, RGB323232F, RGBA32323232F), P8 and ATI formats →
+  `NotSupportedException`.
+- ICNS (Apple Icon Image, `.icns`), read only: decodes the largest element. PNG elements (`ic07`–`ic14`, `icp4`–`icp6`,
+  `ic04`/`ic05` when PNG) through the core PNG decoder via the public API; RGB elements with PackBits-like RLE
+  (`is32`, `il32`, `ih32`, `it32` with its 4-byte prefix) combined with the 8-bit masks (`s8mk`, `l8mk`, `h8mk`,
+  `t8mk`); ARGB `ic04`/`ic05`; 1-bit `ICN#`/`ics#` with their masks as a fallback. JPEG 2000 elements →
+  `NotSupportedException` (a separate package); the 4- and 8-bit legacy icons (`icl4`, `icl8`, ...) only if a fixed Mac
+  palette is added. ICC, EXIF and XMP of an embedded PNG are kept.
+- DoD: ICNS pixels = Pillow 10.2.0 (it reads PNG and RLE elements and writes PNG-based files); VTF has no oracle in
+  Pillow or ImageMagick, so the corpus comes from an own writer whose blocks and raw layouts are checked against the
+  same data decoded from DDS by Pillow; real VTF files (VTFEdit, Source SDK) only as an external corpus with the user's
+  approval.
 
 ## Requests to the core
 

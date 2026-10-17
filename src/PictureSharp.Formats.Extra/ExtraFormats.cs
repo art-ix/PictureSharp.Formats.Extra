@@ -5,6 +5,7 @@ using PictureSharp.Formats.Qoi;
 using PictureSharp.Formats.Sgi;
 using PictureSharp.Formats.SunRaster;
 using PictureSharp.Formats.Tga;
+using PictureSharp.Formats.Vtf;
 using PictureSharp.Formats.Xbm;
 using PictureSharp.Formats.Xpm;
 
@@ -18,11 +19,11 @@ namespace PictureSharp.Formats.Extra;
 /// </example>
 public static class ExtraFormats
 {
-    /// <summary>A new module for every format of the package: QOI, PNM, TGA, DDS, PSD, SGI, Sun Raster, XBM and XPM.</summary>
+    /// <summary>A new module for every format of the package: QOI, PNM, TGA, DDS, PSD, SGI, Sun Raster, XBM, XPM and VTF.</summary>
     public static IReadOnlyList<IImageFormatModule> CreateModules() =>
     [
         new QoiFormat(), new PnmFormat(), new TgaFormat(), new DdsFormat(), new PsdFormat(),
-        new SgiFormat(), new SunRasterFormat(), new XbmFormat(), new XpmFormat(),
+        new SgiFormat(), new SunRasterFormat(), new XbmFormat(), new XpmFormat(), new VtfFormat(),
     ];
 
     extension(ImageConfigurationBuilder builder)

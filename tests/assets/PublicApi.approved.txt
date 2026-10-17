@@ -201,6 +201,17 @@ PictureSharp.Formats.Tga.TgaImageExtensions
   Void SaveAsTga(PictureSharp.Image, System.IO.Stream, PictureSharp.Formats.Tga.TgaEncoderOptions)
   Void SaveAsTga(PictureSharp.Image, System.String, PictureSharp.Formats.Tga.TgaEncoderOptions)
 PictureSharp.Formats.Tga.TgaOrigin
+PictureSharp.Formats.Vtf.VtfFormat
+  Boolean IsSupported(System.ReadOnlySpan`1[System.Byte])
+  Int32 HeaderSize
+  Int32 get_HeaderSize()
+  PictureSharp.Formats.IImageFormatDecoder Decoder
+  PictureSharp.Formats.IImageFormatDecoder get_Decoder()
+  PictureSharp.ImageFormat Format
+  PictureSharp.ImageFormat get_Format()
+  Void .ctor()
+PictureSharp.Formats.Vtf.VtfImageExtensions
+  PictureSharp.ImageFormat get_Vtf()
 PictureSharp.Formats.Xbm.XbmEncoderOptions
   Boolean Equals(PictureSharp.EncoderOptions)
   Boolean Equals(PictureSharp.Formats.Xbm.XbmEncoderOptions)
