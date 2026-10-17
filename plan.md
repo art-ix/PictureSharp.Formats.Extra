@@ -17,7 +17,7 @@ every platform). The core will drop this rule in the future.
 | 0.1.0 | Repository skeleton, QOI, PNM, TGA (read and write) | Done (b891c11); released as part of v0.3.0 |
 | 0.2.0 | DDS: DX9/DX10, uncompressed, BC1–BC5, BC7, BC6H; BGRA8/BGRX8 writing | Done (268087c); released as part of v0.3.0 |
 | 0.3.0 | PSD/PSB (merged image, read only) | Done (f62011b); first GitHub release v0.3.0, not yet on NuGet |
-| 0.4.0 | SGI (read and write), Sun Raster (read), XBM (read and write), XPM (read) | Done; not released |
+| 0.4.0 | SGI (read and write), Sun Raster (read), XBM (read and write), XPM (read) | Done (525fb10); VERSION 0.4.0, not released |
 
 0.1.0 and 0.2.0 were never released on their own: the first release, v0.3.0, contains all three versions.
 
@@ -145,7 +145,7 @@ Done (2026-10-17):
   inverted).
 - Tests: 1002/1002 (including Slow and Oracle).
 
-Remaining for the DoD: VERSION stays 0.3.0 until a release; a check of the rgb.txt notice text against the
+Remaining for the DoD: a check of the rgb.txt notice text against the
 upstream `COPYING` (written from the standard X11 licence).
 
 Every version adds its `PictureSharp.Formats.<Format>` namespace to `ArchitectureTests` and updates the API snapshot,
