@@ -120,6 +120,50 @@ PictureSharp.Formats.Qoi.QoiImageExtensions
   System.Threading.Tasks.Task SaveAsQoiAsync(PictureSharp.Image, System.String, PictureSharp.Formats.Qoi.QoiEncoderOptions, System.Threading.CancellationToken)
   Void SaveAsQoi(PictureSharp.Image, System.IO.Stream, PictureSharp.Formats.Qoi.QoiEncoderOptions)
   Void SaveAsQoi(PictureSharp.Image, System.String, PictureSharp.Formats.Qoi.QoiEncoderOptions)
+PictureSharp.Formats.Sgi.SgiEncoderOptions
+  Boolean Equals(PictureSharp.EncoderOptions)
+  Boolean Equals(PictureSharp.Formats.Sgi.SgiEncoderOptions)
+  Boolean Equals(System.Object)
+  Boolean Rle
+  Boolean get_Rle()
+  Boolean op_Equality(PictureSharp.Formats.Sgi.SgiEncoderOptions, PictureSharp.Formats.Sgi.SgiEncoderOptions)
+  Boolean op_Inequality(PictureSharp.Formats.Sgi.SgiEncoderOptions, PictureSharp.Formats.Sgi.SgiEncoderOptions)
+  Int32 GetHashCode()
+  PictureSharp.Formats.Sgi.SgiEncoderOptions <Clone>$()
+  PictureSharp.ImageFormat Format
+  PictureSharp.ImageFormat get_Format()
+  System.String ToString()
+  Void .ctor()
+  Void set_Rle(Boolean)
+PictureSharp.Formats.Sgi.SgiFormat
+  Boolean IsSupported(System.ReadOnlySpan`1[System.Byte])
+  Int32 HeaderSize
+  Int32 get_HeaderSize()
+  PictureSharp.Formats.IImageFormatDecoder Decoder
+  PictureSharp.Formats.IImageFormatDecoder get_Decoder()
+  PictureSharp.Formats.IImageFormatEncoder Encoder
+  PictureSharp.Formats.IImageFormatEncoder get_Encoder()
+  PictureSharp.ImageFormat Format
+  PictureSharp.ImageFormat get_Format()
+  Void .ctor()
+PictureSharp.Formats.Sgi.SgiImageExtensions
+  Byte[] ToSgi(PictureSharp.Image, PictureSharp.Formats.Sgi.SgiEncoderOptions)
+  PictureSharp.ImageFormat get_Sgi()
+  System.Threading.Tasks.Task SaveAsSgiAsync(PictureSharp.Image, System.IO.Stream, PictureSharp.Formats.Sgi.SgiEncoderOptions, System.Threading.CancellationToken)
+  System.Threading.Tasks.Task SaveAsSgiAsync(PictureSharp.Image, System.String, PictureSharp.Formats.Sgi.SgiEncoderOptions, System.Threading.CancellationToken)
+  Void SaveAsSgi(PictureSharp.Image, System.IO.Stream, PictureSharp.Formats.Sgi.SgiEncoderOptions)
+  Void SaveAsSgi(PictureSharp.Image, System.String, PictureSharp.Formats.Sgi.SgiEncoderOptions)
+PictureSharp.Formats.SunRaster.SunRasterFormat
+  Boolean IsSupported(System.ReadOnlySpan`1[System.Byte])
+  Int32 HeaderSize
+  Int32 get_HeaderSize()
+  PictureSharp.Formats.IImageFormatDecoder Decoder
+  PictureSharp.Formats.IImageFormatDecoder get_Decoder()
+  PictureSharp.ImageFormat Format
+  PictureSharp.ImageFormat get_Format()
+  Void .ctor()
+PictureSharp.Formats.SunRaster.SunRasterImageExtensions
+  PictureSharp.ImageFormat get_SunRaster()
 PictureSharp.Formats.Tga.TgaEncoderOptions
   Boolean Equals(PictureSharp.EncoderOptions)
   Boolean Equals(PictureSharp.Formats.Tga.TgaEncoderOptions)
@@ -157,3 +201,50 @@ PictureSharp.Formats.Tga.TgaImageExtensions
   Void SaveAsTga(PictureSharp.Image, System.IO.Stream, PictureSharp.Formats.Tga.TgaEncoderOptions)
   Void SaveAsTga(PictureSharp.Image, System.String, PictureSharp.Formats.Tga.TgaEncoderOptions)
 PictureSharp.Formats.Tga.TgaOrigin
+PictureSharp.Formats.Xbm.XbmEncoderOptions
+  Boolean Equals(PictureSharp.EncoderOptions)
+  Boolean Equals(PictureSharp.Formats.Xbm.XbmEncoderOptions)
+  Boolean Equals(System.Object)
+  Boolean op_Equality(PictureSharp.Formats.Xbm.XbmEncoderOptions, PictureSharp.Formats.Xbm.XbmEncoderOptions)
+  Boolean op_Inequality(PictureSharp.Formats.Xbm.XbmEncoderOptions, PictureSharp.Formats.Xbm.XbmEncoderOptions)
+  Int32 GetHashCode()
+  PictureSharp.Formats.Xbm.XbmEncoderOptions <Clone>$()
+  PictureSharp.ImageFormat Format
+  PictureSharp.ImageFormat get_Format()
+  System.Nullable`1[System.ValueTuple`2[System.Int32,System.Int32]] Hotspot
+  System.Nullable`1[System.ValueTuple`2[System.Int32,System.Int32]] get_Hotspot()
+  System.String Name
+  System.String ToString()
+  System.String get_Name()
+  Void .ctor()
+  Void set_Hotspot(System.Nullable`1[System.ValueTuple`2[System.Int32,System.Int32]])
+  Void set_Name(System.String)
+PictureSharp.Formats.Xbm.XbmFormat
+  Boolean IsSupported(System.ReadOnlySpan`1[System.Byte])
+  Int32 HeaderSize
+  Int32 get_HeaderSize()
+  PictureSharp.Formats.IImageFormatDecoder Decoder
+  PictureSharp.Formats.IImageFormatDecoder get_Decoder()
+  PictureSharp.Formats.IImageFormatEncoder Encoder
+  PictureSharp.Formats.IImageFormatEncoder get_Encoder()
+  PictureSharp.ImageFormat Format
+  PictureSharp.ImageFormat get_Format()
+  Void .ctor()
+PictureSharp.Formats.Xbm.XbmImageExtensions
+  Byte[] ToXbm(PictureSharp.Image, PictureSharp.Formats.Xbm.XbmEncoderOptions)
+  PictureSharp.ImageFormat get_Xbm()
+  System.Threading.Tasks.Task SaveAsXbmAsync(PictureSharp.Image, System.IO.Stream, PictureSharp.Formats.Xbm.XbmEncoderOptions, System.Threading.CancellationToken)
+  System.Threading.Tasks.Task SaveAsXbmAsync(PictureSharp.Image, System.String, PictureSharp.Formats.Xbm.XbmEncoderOptions, System.Threading.CancellationToken)
+  Void SaveAsXbm(PictureSharp.Image, System.IO.Stream, PictureSharp.Formats.Xbm.XbmEncoderOptions)
+  Void SaveAsXbm(PictureSharp.Image, System.String, PictureSharp.Formats.Xbm.XbmEncoderOptions)
+PictureSharp.Formats.Xpm.XpmFormat
+  Boolean IsSupported(System.ReadOnlySpan`1[System.Byte])
+  Int32 HeaderSize
+  Int32 get_HeaderSize()
+  PictureSharp.Formats.IImageFormatDecoder Decoder
+  PictureSharp.Formats.IImageFormatDecoder get_Decoder()
+  PictureSharp.ImageFormat Format
+  PictureSharp.ImageFormat get_Format()
+  Void .ctor()
+PictureSharp.Formats.Xpm.XpmImageExtensions
+  PictureSharp.ImageFormat get_Xpm()

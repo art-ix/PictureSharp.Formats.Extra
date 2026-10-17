@@ -3,7 +3,8 @@
 
 Sources are synthetic. Variants come from Pillow 10.2.0 and ImageMagick `convert`; small writers below produce the
 layouts no tool writes (QOI, unusual PNM maxvals and comments, 15/16-bit and right-to-left TGA, RLE across rows, DDS
-headers for every BC format, PSD layouts ImageMagick does not write). DDS block data is random with the BC6H/BC7 mode bits chosen evenly, so every mode,
+headers for every BC format, PSD layouts ImageMagick does not write, SGI grey/alpha and shared RLE rows, Sun
+Raster byte encoding and 32-bit pixels, X10 bitmaps, XPM visuals, names and up to three characters per pixel). DDS block data is random with the BC6H/BC7 mode bits chosen evenly, so every mode,
 partition and anchor is decoded; no encoder for BC4-BC7 is needed.
 The QOI writer is a line-by-line port of qoi.h qoi_encode, so its files also check the C# encoder byte for byte.
 
@@ -522,6 +523,264 @@ def psd(s):
     psd_custom("one-pixel.psd", 3, [np.array([[v]], np.uint8) for v in (10, 20, 30)])
 
 
+# --------------------------------------------------------------------------- SGI
+
+def sgi_rle_row(samples, bpc):
+    """Standard SGI RLE: literal runs (0x80 | n) and repeat runs of at least three, a zero count ends the row."""
+    out, i, n = [], 0, len(samples)
+    while i < n:
+        run = 1
+        while i + run < n and run < 127 and samples[i + run] == samples[i]:
+            run += 1
+        if run >= 3:
+            out += [run, samples[i]]
+            i += run
+            continue
+        j = i
+        while j < n and j - i < 127 and not (j + 2 < n and samples[j] == samples[j + 1] == samples[j + 2]):
+            j += 1
+        out += [0x80 | (j - i)] + list(samples[i:j])
+        i = j
+    out.append(0)
+    return b"".join(struct.pack(">H" if bpc == 2 else "B", int(v)) for v in out)
+
+
+def sgi_custom(name, planes, bpc=1, rle=False, dimension=3, zsize=None, shared=False, reverse=False):
+    """planes: list of 2-D arrays, top row first; written bottom up."""
+    h, w = planes[0].shape
+    head = struct.pack(">hBBHHHHii4s80si404s", 474, int(rle), bpc, dimension, w, h, zsize or len(planes), 0, (1 << (8 * bpc)) - 1, b"", b"test", 0, b"")
+    rows = [plane[h - 1 - y] for plane in planes for y in range(h)]
+    if not rle:
+        dt = ">u2" if bpc == 2 else "u1"
+        body = b"".join(r.astype(dt).tobytes() for r in rows)
+    else:
+        table = 512 + 8 * len(rows)
+        encoded = [sgi_rle_row(r, bpc) for r in rows]
+        # Optionally store the rows in reverse order, and share identical rows, as some writers do.
+        order = list(reversed(range(len(rows)))) if reverse else list(range(len(rows)))
+        offsets, lengths, data, seen = [0] * len(rows), [0] * len(rows), b"", {}
+        for i in order:
+            if shared and encoded[i] in seen:
+                offsets[i] = seen[encoded[i]]
+            else:
+                offsets[i] = table + len(data)
+                seen[encoded[i]] = offsets[i]
+                data += encoded[i]
+            lengths[i] = len(encoded[i])
+        body = struct.pack(f">{len(rows)}I", *offsets) + struct.pack(f">{len(rows)}I", *lengths) + data
+    open(path("sgi", name), "wb").write(head + body)
+
+
+def sgi(s):
+    src = lambda name: path("src", name)
+    photo, rgba, gray, flat = s["photo"], s["rgba"], s["gray"], s["flat"]
+    for name, im in [("rgb", Image.fromarray(photo)), ("rgba", Image.fromarray(rgba, "RGBA")), ("gray", Image.fromarray(gray))]:
+        im.save(path("sgi", f"pil-{name}.sgi"))
+    Image.fromarray(gray[:1]).save(path("sgi", "pil-row.bw"))
+    Image.fromarray(photo).save(path("sgi", "pil-rgb16.rgb"), bpc=2)
+    for name, args in [
+        ("im-rgb-rle.sgi", [src("photo.png")]),
+        ("im-rgba-rle.rgba", [src("rgba.png")]),
+        ("im-gray-rle.bw", [src("gray.png")]),
+        ("im-big-rgb-rle.sgi", [src("big.png")]),
+        ("im-rgb-verbatim.sgi", [src("photo.png"), "-compress", "none"]),
+        ("im-rgb16-rle.sgi", [src("photo.png"), "-depth", "16"]),
+        ("im-rgba16.sgi", [src("rgba.png"), "-depth", "16", "-compress", "none"]),
+    ]:
+        depth = [] if "-depth" in args else ["-depth", "8"]
+        run("convert", *args, *depth, "SGI:" + path("sgi", name))
+
+    rng = np.random.default_rng(17)
+    wide16 = lambda p: p.astype(np.uint16) * 257 + rng.integers(0, 257, p.shape).astype(np.uint16) % 257
+    flat_planes = [flat[..., c] for c in range(3)]
+    # Two channels (grey and alpha) are covered by SgiTests: Pillow rejects them and ImageMagick drops the alpha.
+    sgi_custom("rgba16-rle.sgi", [wide16(rgba[..., c]) for c in range(4)], bpc=2, rle=True)
+    sgi_custom("gray16-verbatim.sgi", [wide16(gray)], bpc=2, dimension=2)
+    sgi_custom("flat-rle-shared-reversed.sgi", flat_planes, rle=True, shared=True, reverse=True)
+    # Dimension 2 ignores zsize, dimension 1 also the height: only the first channel and row are read.
+    sgi_custom("dim2-zsize3.sgi", [gray, gray, gray], dimension=2, zsize=3)
+    sgi_custom("dim1-row.sgi", [gray[:1]], dimension=1, zsize=1)
+    sgi_custom("one-pixel.sgi", [np.array([[v]], np.uint8) for v in (10, 20, 30)], rle=True)
+
+
+# --------------------------------------------------------------------------- Sun Raster
+
+def sun_rle(data):
+    """Sun byte encoding over the whole stream (row padding included): runs may cross rows."""
+    out, i, n = bytearray(), 0, len(data)
+    while i < n:
+        run = 1
+        while i + run < n and run < 256 and data[i + run] == data[i]:
+            run += 1
+        if run >= 3 or data[i] == 0x80:
+            if run >= 2:
+                out += bytes([0x80, run - 1, data[i]])
+            else:
+                out += b"\x80\x00"
+            i += run
+        else:
+            out.append(data[i])
+            i += 1
+    return bytes(out)
+
+
+def sun_rows(rows, depth):
+    """Pads every row (bytes) to 16 bits."""
+    return b"".join(r + b"\0" * (len(r) % 2) for r in rows)
+
+
+def sun_custom(name, w, h, depth, rows, ras_type=1, cmap=b"", map_type=None):
+    data = sun_rows(rows, depth)
+    if ras_type == 2:
+        data = sun_rle(data)
+    if map_type is None:
+        map_type = 1 if cmap else 0
+    head = struct.pack(">8I", 0x59A66A95, w, h, depth, len(data), ras_type, map_type, len(cmap))
+    open(path("sun", name), "wb").write(head + cmap + data)
+
+
+def pack_bits(values, depth):
+    """Packs a row of small ints MSB first."""
+    out, acc, bits = bytearray(), 0, 0
+    for v in values:
+        acc = (acc << depth) | int(v)
+        bits += depth
+        if bits == 8:
+            out.append(acc)
+            acc, bits = 0, 0
+    if bits:
+        out.append(acc << (8 - bits))
+    return bytes(out)
+
+
+def sun(s):
+    src = lambda name: path("src", name)
+    photo, rgba, gray, flat = s["photo"], s["rgba"], s["gray"], s["flat"]
+    for name, args in [
+        ("im-rgb.ras", [src("photo.png")]),
+        ("im-palette.ras", [src("photo.png"), "-colors", "16"]),
+        ("im-gray.ras", [src("gray.png")]),
+        ("im-mono.ras", [src("gray.png"), "-monochrome"]),
+        ("im-big-rgb.ras", [src("big.png")]),
+        ("im-rgba.ras", [src("rgba.png")]),
+    ]:
+        run("convert", *args, "-depth", "8", "SUN:" + path("sun", name))
+
+    h, w, _ = photo.shape
+    fh, fw, _ = flat.shape
+    bgr = lambda img, y: img[y, :, ::-1].tobytes()
+    sun_custom("bgr-standard.ras", w, h, 24, [bgr(photo, y) for y in range(h)])
+    sun_custom("bgr-old.ras", w, h, 24, [bgr(photo, y) for y in range(h)], ras_type=0)
+    sun_custom("xbgr-standard.ras", w, h, 32, [np.dstack([rgba[..., 3], photo[..., ::-1]])[y].tobytes() for y in range(h)])
+    sun_custom("xrgb-rgb.ras", w, h, 32, [np.dstack([np.zeros_like(gray), photo])[y].tobytes() for y in range(h)], ras_type=3)
+    sun_custom("gray-nomap-rle.ras", w, h, 8, [gray[y].tobytes() for y in range(h)], ras_type=2)
+    sun_custom("flat-bgr-rle.ras", fw, fh, 24, [bgr(flat, y) for y in range(fh)], ras_type=2)
+    sun_custom("photo-bgr-rle.ras", w, h, 24, [bgr(photo, y) for y in range(h)], ras_type=2)
+    idx = s["indexed"]
+    _, colors = palette_image(idx)
+    cmap = bytes(c[0] for c in colors) + bytes(c[1] for c in colors) + bytes(c[2] for c in colors)
+    sun_custom("palette-rle.ras", w, h, 8, [idx[y].tobytes() for y in range(h)], ras_type=2, cmap=cmap)
+    sun_custom("palette4.ras", w, h, 4, [pack_bits(idx[y], 4) for y in range(h)], cmap=cmap)
+    sun_custom("gray4-nomap.ras", w, h, 4, [pack_bits(idx[y], 4) for y in range(h)])
+    mono = (gray < 128).astype(np.uint8)
+    sun_custom("mono-rle.ras", w, h, 1, [pack_bits(mono[y], 1) for y in range(h)], ras_type=2)
+    # A 1-bit image with a colour map is covered by SunRasterTests: Pillow ignores the map and ImageMagick inverts the bits.
+    # 0x80 bytes need the two-byte escape.
+    esc = np.where(idx % 3 == 0, 0x80, gray).astype(np.uint8)
+    sun_custom("gray-escape-rle.ras", w, h, 8, [esc[y].tobytes() for y in range(h)], ras_type=2)
+    sun_custom("one-pixel.ras", 1, 1, 24, [bytes([30, 20, 10])])
+
+
+# --------------------------------------------------------------------------- XBM
+
+def xbm_custom(name, text):
+    open(path("xbm", name), "w", newline="").write(text)
+
+
+def xbm(s):
+    src = lambda name: path("src", name)
+    gray, big = s["gray"], np.asarray(Image.open(src("big.png")).convert("L"))
+    mono = Image.fromarray(gray).convert("1", dither=Image.Dither.NONE)
+    mono.save(path("xbm", "pil.xbm"))
+    mono.save(path("xbm", "pil-hotspot.xbm"), hotspot=(3, 4))
+    run("convert", src("gray.png"), "-monochrome", path("xbm", "im.xbm"))
+    run("convert", src("big.png"), "-monochrome", path("xbm", "im-big.xbm"))
+
+    bits = (gray < 128).astype(np.uint8)
+    h, w = bits.shape
+
+    def values(unit):
+        out = []
+        for y in range(h):
+            for x0 in range(0, w, unit):
+                v = 0
+                for b in range(unit):
+                    if x0 + b < w and bits[y, x0 + b]:
+                        v |= 1 << b
+                out.append(v)
+        return out
+
+    x10 = values(16)
+    lines = ",\n".join(", ".join(f"0x{v:04x}" for v in x10[i:i + 8]) for i in range(0, len(x10), 8))
+    xbm_custom("x10.xbm", f"#define x10_width {w}\n#define x10_height {h}\nstatic short x10_bits[] = {{\n{lines}}};\n")
+    x11 = values(8)
+    # Comments, upper-case hex and decimal values are covered by XbmTests: neither oracle reads them.
+    crlf = ", ".join(f"0x{v:02X}" for v in x11)
+    xbm_custom("hotspot-crlf.xbm",
+               f"#define pic_width {w}\r\n#define pic_height {h}\r\n#define pic_x_hot 1\r\n#define pic_y_hot 2\r\n"
+               f"static unsigned char pic_bits[] = {{ {crlf} }};")
+    xbm_custom("one-pixel.xbm", "#define o_width 1\n#define o_height 1\nstatic char o_bits[] = { 0x01 };\n")
+
+
+# --------------------------------------------------------------------------- XPM
+
+def xpm_text(name, w, h, colors, rows, extra="", comment=True):
+    lines = [f'"{w} {h} {len(colors)} {len(rows[0]) // w}{extra}"']
+    lines += [f'"{key} {spec}"' for key, spec in colors]
+    if comment:
+        lines.insert(1, "/* colors */")
+        lines.insert(len(colors) + 2, "/* pixels */")
+    lines += [f'"{r}"' for r in rows]
+    return f"/* XPM */\nstatic char *{name}[] = {{\n" + ",\n".join(lines) + "\n};\n"
+
+
+def xpm(s):
+    src = lambda name: path("src", name)
+    for name, args in [
+        ("im-rgb.xpm", [src("photo.png")]),
+        ("im-rgba.xpm", [src("rgba.png")]),
+        ("im-gray.xpm", [src("gray.png")]),
+        ("im-palette.xpm", [src("photo.png"), "-colors", "16"]),
+    ]:
+        run("convert", *args, "XPM:" + path("xpm", name))
+
+    idx = s["indexed"]
+    h, w = idx.shape
+    write = lambda name, text: open(path("xpm", name), "w").write(text)
+    keys1 = ".#abcdefghijklmn"
+    named = ["black", "white", "red", "light blue", "DarkOliveGreen", "gray50", "navajo white", "medium sea green",
+             "None", "grey", "maroon", "purple", "ghost white", "LightGoldenrodYellow", "steel blue", "Gold"]
+    write("names.xpm", xpm_text("names", w, h, [(k, f"c {n}") for k, n in zip(keys1, named)], ["".join(keys1[v] for v in r) for r in idx]))
+    hexes = ["#000", "#fff", "#f80", "#123456", "#abcdef", "#00ff7f", "#123456789abc", "#fedcba987654", "#8000ffff0001",
+             "#123abc789", "#fff000888", "#7f7f7f", "#0a0b0c", "#c0ffee", "#bad", "#000000000000"]
+    keys2 = [f"{a}{b}" for a in "Ab" for b in "+-*/&@?!"]
+    write("hex-cpp2.xpm", xpm_text("hex", w, h, [(k, f"c {v}") for k, v in zip(keys2, hexes)], ["".join(keys2[v] for v in r) for r in idx]))
+    # Visual fallback: no c key (g, then g4, then m), a symbolic name first, and a c key after the others.
+    visuals = ["s sym m black", "m white g4 #808080", "g #102030 m black", "s s1 c #ff0000", "m black c #00ff00 g white",
+               "g gray20", "g4 #333", "c None", "m #00f", "c #ff00ff s magenta", "g white", "c yellow", "m gray", "c #010203",
+               "c orange", "g black"]
+    keys3 = [f"x{a}{b}" for a in "01" for b in "01234567"]
+    write("visuals-cpp3.xpm", xpm_text("vis", w, h, [(k, v) for k, v in zip(keys3, visuals)], ["".join(keys3[v] for v in r) for r in idx],
+                                     extra=" 2 3 XPMEXT"))
+    # ImageMagick reads at most three characters per pixel; XpmTests cover four.
+    keys4 = [f"{v:02d}" for v in range(16)]
+    tail = '"XPMEXT ext1 data",\n"XPMENDEXT"\n};\n'
+    text = xpm_text("ext", w, h, [(k, f"c #{v * 16:02x}{255 - v * 13:02x}{v * 71 % 256:02x}") for v, k in enumerate(keys4)],
+                    ["".join(keys4[v] for v in r) for r in idx], comment=False)
+    write("cpp2-ext.xpm", text.replace("\n};\n", ",\n" + tail))
+    write("one-pixel.xpm", '/* XPM */\nstatic char *o[] = {"1 1 1 1", "a c #102030", "a"};\n')
+
+
 def main():
     shutil.rmtree(CORPUS, ignore_errors=True)
     os.makedirs(SRC)
@@ -531,6 +790,10 @@ def main():
     tga(s)
     dds(s)
     psd(s)
+    sgi(s)
+    sun(s)
+    xbm(s)
+    xpm(s)
     shutil.rmtree(SRC)
 
 

@@ -2,7 +2,9 @@ using System.Diagnostics;
 using PictureSharp.Formats.Dds;
 using PictureSharp.Formats.Pnm;
 using PictureSharp.Formats.Qoi;
+using PictureSharp.Formats.Sgi;
 using PictureSharp.Formats.Tga;
+using PictureSharp.Formats.Xbm;
 
 namespace PictureSharp.Formats.Extra.Tests;
 
@@ -31,6 +33,10 @@ public sealed class OracleTests
         ("tga-gray-rle", new TgaEncoderOptions(), false, true),
         ("dds-bgra", new DdsEncoderOptions(), true, false),
         ("dds-bgrx", new DdsEncoderOptions { PixelFormat = DdsPixelFormat.Bgrx32 }, false, false),
+        ("sgi-rgb", new SgiEncoderOptions { Rle = false }, false, false),
+        ("sgi-rgb-rle", new SgiEncoderOptions(), false, false),
+        ("sgi-rgba-rle", new SgiEncoderOptions(), true, false),
+        ("sgi-gray-rle", new SgiEncoderOptions(), false, true),
     ];
 
     [Test]
@@ -45,6 +51,34 @@ public sealed class OracleTests
         {
             File.WriteAllBytes(file, TestSupport.Encode(image, options));
             await Assert.That(Run(PillowRgba, file)).IsEqualTo(TestSupport.Sha256(image));
+        }
+        finally
+        {
+            File.Delete(file);
+        }
+    }
+
+    [Test]
+    public async Task XbmFile_DecodesInPillowWithSetBitsWhite()
+    {
+        Skip.Unless(HasPillow, "Needs python3 with Pillow 10.2.0.");
+
+        // Pillow maps set bits to white, so it must see the inverted image.
+        using Image image = TestSupport.CreateImage(143, 37, alpha: false, gray: true);
+        using var inverted = new Image(image.Width, image.Height);
+        Span<Rgba32> source = image.GetPixelSpan(), target = inverted.GetPixelSpan();
+        for (int i = 0; i < source.Length; i++)
+        {
+            bool black = source[i].R < 128;
+            source[i] = black ? new Rgba32(0, 0, 0) : new Rgba32(255, 255, 255);
+            target[i] = black ? new Rgba32(255, 255, 255) : new Rgba32(0, 0, 0);
+        }
+
+        string file = Path.Combine(Path.GetTempPath(), $"picturesharp-extra-xbm-{Environment.ProcessId}");
+        try
+        {
+            File.WriteAllBytes(file, TestSupport.Encode(image, new XbmEncoderOptions { Hotspot = (1, 2) }));
+            await Assert.That(Run(PillowRgba, file)).IsEqualTo(TestSupport.Sha256(inverted));
         }
         finally
         {

@@ -10,6 +10,11 @@ Pillow inverts 1-bit bitmaps, ignores alpha except in 4-channel RGB, does not un
 reads neither 16-bit nor PSB. ImageMagick takes alpha only from a negative layer count, so files without a layer
 section are decoded after inserting one with count -1 ("imagemagick-layers"). The "oracle" field records the path.
 16-bit greyscale (Pillow mode I) is reduced as round(v / 65535 * 255), ties to even, the decoder's documented rule.
+SGI, Sun Raster, XBM and XPM files use Pillow when it agrees with ImageMagick's 16-bit output and ImageMagick otherwise
+(Pillow truncates 16-bit SGI samples and misreads 32-bit Sun pixels and XPM comments before the pixels); the script
+lists every such difference. Sun 32-bit files go through ImageMagick with -alpha off (the first byte is padding), and
+byte-encoded Sun files are first expanded to type 1 ("-expanded"). Pillow's XBM result is inverted: it decodes set
+bits as white.
 
 Run with:  python3 -I tests/assets/make_reference.py
 """
@@ -104,11 +109,11 @@ def psd_with_negative_layer_count(data):
     return data[:pos] + struct.pack(wide, len(section)) + section + data[pos + struct.calcsize(wide):]
 
 
-def via_imagemagick16(file):
+def via_imagemagick16(file, *args):
     """ImageMagick's 16-bit RGBA reduced as round(v / 257): its own -depth 8 output truncates."""
     with tempfile.TemporaryDirectory() as tmp:
         raw = os.path.join(tmp, "x.rgba")
-        subprocess.run(["convert", file, "-depth", "16", "RGBA:" + raw], check=True)
+        subprocess.run(["convert", file, *args, "-depth", "16", "RGBA:" + raw], check=True)
         size = subprocess.run(["identify", "-format", "%w %h", file], check=True, capture_output=True, text=True).stdout.split()
         v = np.fromfile(raw, "<u2").astype(np.int64)
         return (int(size[0]), int(size[1])), ((v + 128) // 257).astype(np.uint8).tobytes(), "imagemagick"
@@ -134,9 +139,84 @@ def psd(file):
     return magick
 
 
+def pillow_rgba(file, invert=False):
+    try:
+        with Image.open(file) as im:
+            im.load()
+            data = np.asarray(im.convert("RGBA"))
+    except (OSError, ValueError, KeyError, SyntaxError):
+        return None
+    if invert:
+        data = data.copy()
+        data[..., :3] = 255 - data[..., :3]
+    return (data.shape[1], data.shape[0]), data.tobytes(), "pillow"
+
+
+DIFFERENCES = []
+
+
+def consensus(file, magick_args=(), invert=False):
+    """Pillow when it reads the file and agrees with ImageMagick, otherwise ImageMagick (the difference is listed)."""
+    pillow = pillow_rgba(file, invert)
+    try:
+        magick = via_imagemagick16(file, *magick_args)
+    except subprocess.CalledProcessError:
+        # ImageMagick rejects some valid variants (Sun type 0); Pillow alone decides them.
+        assert pillow, file
+        return pillow
+    if pillow and pillow[:2] == magick[:2]:
+        return pillow
+    if pillow:
+        DIFFERENCES.append(os.path.basename(file))
+    return magick
+
+
+def sun_without_rle(data):
+    """A byte-encoded (type 2) Sun Raster file expanded to type 1. The stream covers the row padding, which Pillow
+    leaves out, and ImageMagick swaps the colours of encoded 24-bit files; both read the expanded file correctly."""
+    w, h, depth, _, ras_type, map_type, map_length = struct.unpack_from(">7I", data, 4)
+    if ras_type != 2:
+        return None
+    size = ((w * depth + 15) // 16) * 2 * h
+    src, out, i = data[32 + map_length:], bytearray(), 0
+    while len(out) < size:
+        if src[i] != 0x80:
+            out.append(src[i])
+            i += 1
+        elif src[i + 1] == 0:
+            out.append(0x80)
+            i += 2
+        else:
+            out += bytes([src[i + 2]]) * (src[i + 1] + 1)
+            i += 3
+    return struct.pack(">8I", 0x59A66A95, w, h, depth, size, 1, map_type, map_length) + data[32:32 + map_length] + bytes(out[:size])
+
+
+def sun(file):
+    expanded = sun_without_rle(open(file, "rb").read())
+    if expanded is None:
+        # The first byte of a 32-bit pixel is padding; ImageMagick reads it as alpha.
+        return consensus(file, ["-alpha", "off"])
+    with tempfile.TemporaryDirectory() as tmp:
+        copy = os.path.join(tmp, "x.ras")
+        open(copy, "wb").write(expanded)
+        size, data, oracle = consensus(copy, ["-alpha", "off"])
+        return size, data, oracle + "-expanded"
+
+
 def rgba(file):
-    if file.lower().endswith((".psd", ".psb")):
+    lower = file.lower()
+    if lower.endswith((".psd", ".psb")):
         return psd(file)
+    if lower.endswith((".sgi", ".rgb", ".rgba", ".bw")):
+        return consensus(file)
+    if lower.endswith(".ras"):
+        return sun(file)
+    if lower.endswith(".xbm"):
+        # Pillow decodes set bits as white; they are the black foreground.
+        return consensus(file, invert=True)
+    if lower.endswith(".xpm"):
+        return consensus(file)
     special = via_bcdec(file)
     if special:
         return special
@@ -166,6 +246,8 @@ def main():
         json.dump(reference, f, indent=1, sort_keys=True)
         f.write("\n")
     print(len(reference), "files")
+    for name in DIFFERENCES:
+        print("Pillow differs from ImageMagick:", name)
 
 
 if __name__ == "__main__":

@@ -557,6 +557,228 @@
   "sha256": "6827c4942eea46fff7cb0d433227fb8799c20ae3ff270302bc9bb592742ab681",
   "width": 37
  },
+ "sgi/dim1-row.sgi": {
+  "height": 1,
+  "oracle": "pillow",
+  "sha256": "d781c86ccd5a779230960dfe1471baabbe46e4b86efeafff22b278f93b0e47d6",
+  "width": 37
+ },
+ "sgi/dim2-zsize3.sgi": {
+  "height": 23,
+  "oracle": "imagemagick",
+  "sha256": "0184f8c7b689eba6db127da2e888332c3090dec5a96973fddb58489d82878325",
+  "width": 37
+ },
+ "sgi/flat-rle-shared-reversed.sgi": {
+  "height": 40,
+  "oracle": "pillow",
+  "sha256": "d79073986b83d7cf3d142107e8c7a65c2d60c9cac0fcda548d86a750d773ea82",
+  "width": 150
+ },
+ "sgi/gray16-verbatim.sgi": {
+  "height": 23,
+  "oracle": "imagemagick",
+  "sha256": "c22c7a32015cebb41149b050aa79633c8f685f4f06c6bfd13b2c6f17d27cc12b",
+  "width": 37
+ },
+ "sgi/im-big-rgb-rle.sgi": {
+  "height": 120,
+  "oracle": "pillow",
+  "sha256": "79e5f8f16dce0c06211a3731f2f2822cf1caae0a0c20fb08a2b7bb34249c829f",
+  "width": 160
+ },
+ "sgi/im-gray-rle.bw": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "0184f8c7b689eba6db127da2e888332c3090dec5a96973fddb58489d82878325",
+  "width": 37
+ },
+ "sgi/im-rgb-rle.sgi": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "cec62b56ce1706fc38c68615ef77d15cfc49476368f494cced18c0434d8f28ab",
+  "width": 37
+ },
+ "sgi/im-rgb-verbatim.sgi": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "cec62b56ce1706fc38c68615ef77d15cfc49476368f494cced18c0434d8f28ab",
+  "width": 37
+ },
+ "sgi/im-rgb16-rle.sgi": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "cec62b56ce1706fc38c68615ef77d15cfc49476368f494cced18c0434d8f28ab",
+  "width": 37
+ },
+ "sgi/im-rgba-rle.rgba": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "6827c4942eea46fff7cb0d433227fb8799c20ae3ff270302bc9bb592742ab681",
+  "width": 37
+ },
+ "sgi/im-rgba16.sgi": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "6827c4942eea46fff7cb0d433227fb8799c20ae3ff270302bc9bb592742ab681",
+  "width": 37
+ },
+ "sgi/one-pixel.sgi": {
+  "height": 1,
+  "oracle": "pillow",
+  "sha256": "85b0134ceffc9fbba06039e7645b449c566f4379bd4a1770e1beefeb919e9e8d",
+  "width": 1
+ },
+ "sgi/pil-gray.sgi": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "0184f8c7b689eba6db127da2e888332c3090dec5a96973fddb58489d82878325",
+  "width": 37
+ },
+ "sgi/pil-rgb.sgi": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "cec62b56ce1706fc38c68615ef77d15cfc49476368f494cced18c0434d8f28ab",
+  "width": 37
+ },
+ "sgi/pil-rgb16.rgb": {
+  "height": 23,
+  "oracle": "imagemagick",
+  "sha256": "87751e3921b28217d8f3a1eeafe5fe2fc6b6e2f99d60138042cc72d58fcfaa79",
+  "width": 37
+ },
+ "sgi/pil-rgba.sgi": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "6827c4942eea46fff7cb0d433227fb8799c20ae3ff270302bc9bb592742ab681",
+  "width": 37
+ },
+ "sgi/pil-row.bw": {
+  "height": 1,
+  "oracle": "pillow",
+  "sha256": "d781c86ccd5a779230960dfe1471baabbe46e4b86efeafff22b278f93b0e47d6",
+  "width": 37
+ },
+ "sgi/rgba16-rle.sgi": {
+  "height": 23,
+  "oracle": "imagemagick",
+  "sha256": "dc44171a3346292dbe2eb11425c4c5964987b4ae91f3797f04207446634847d7",
+  "width": 37
+ },
+ "sun/bgr-old.ras": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "cec62b56ce1706fc38c68615ef77d15cfc49476368f494cced18c0434d8f28ab",
+  "width": 37
+ },
+ "sun/bgr-standard.ras": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "cec62b56ce1706fc38c68615ef77d15cfc49476368f494cced18c0434d8f28ab",
+  "width": 37
+ },
+ "sun/flat-bgr-rle.ras": {
+  "height": 40,
+  "oracle": "pillow-expanded",
+  "sha256": "d79073986b83d7cf3d142107e8c7a65c2d60c9cac0fcda548d86a750d773ea82",
+  "width": 150
+ },
+ "sun/gray-escape-rle.ras": {
+  "height": 23,
+  "oracle": "pillow-expanded",
+  "sha256": "cd3c0a0ebdb10d2905daf6de451bf225bb47cfd6ef9b0701ce45b2ebf28282f9",
+  "width": 37
+ },
+ "sun/gray-nomap-rle.ras": {
+  "height": 23,
+  "oracle": "pillow-expanded",
+  "sha256": "0184f8c7b689eba6db127da2e888332c3090dec5a96973fddb58489d82878325",
+  "width": 37
+ },
+ "sun/gray4-nomap.ras": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "51985477591a8e58dd3f56339a863051bb5577faa87864c942820330743466d5",
+  "width": 37
+ },
+ "sun/im-big-rgb.ras": {
+  "height": 120,
+  "oracle": "pillow",
+  "sha256": "79e5f8f16dce0c06211a3731f2f2822cf1caae0a0c20fb08a2b7bb34249c829f",
+  "width": 160
+ },
+ "sun/im-gray.ras": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "0184f8c7b689eba6db127da2e888332c3090dec5a96973fddb58489d82878325",
+  "width": 37
+ },
+ "sun/im-mono.ras": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "9716d2beb81ae1ba8aa35a775aac010e287136214411f4abd3f642d8c3ad5552",
+  "width": 37
+ },
+ "sun/im-palette.ras": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "f055c42990b35ecccb69d2ee30185d2e44cac41eae5dce35210d117df4cc544d",
+  "width": 37
+ },
+ "sun/im-rgb.ras": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "cec62b56ce1706fc38c68615ef77d15cfc49476368f494cced18c0434d8f28ab",
+  "width": 37
+ },
+ "sun/im-rgba.ras": {
+  "height": 23,
+  "oracle": "imagemagick",
+  "sha256": "cec62b56ce1706fc38c68615ef77d15cfc49476368f494cced18c0434d8f28ab",
+  "width": 37
+ },
+ "sun/mono-rle.ras": {
+  "height": 23,
+  "oracle": "pillow-expanded",
+  "sha256": "383c8f8aca1eadc5a4cbfb25a347364202203d3c17f2326a51e869072ec1b9e1",
+  "width": 37
+ },
+ "sun/one-pixel.ras": {
+  "height": 1,
+  "oracle": "imagemagick",
+  "sha256": "85b0134ceffc9fbba06039e7645b449c566f4379bd4a1770e1beefeb919e9e8d",
+  "width": 1
+ },
+ "sun/palette-rle.ras": {
+  "height": 23,
+  "oracle": "pillow-expanded",
+  "sha256": "511ad83300381c296236067296d37517b0e18c8e5d01d563d358824995c2c5b3",
+  "width": 37
+ },
+ "sun/palette4.ras": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "511ad83300381c296236067296d37517b0e18c8e5d01d563d358824995c2c5b3",
+  "width": 37
+ },
+ "sun/photo-bgr-rle.ras": {
+  "height": 23,
+  "oracle": "pillow-expanded",
+  "sha256": "cec62b56ce1706fc38c68615ef77d15cfc49476368f494cced18c0434d8f28ab",
+  "width": 37
+ },
+ "sun/xbgr-standard.ras": {
+  "height": 23,
+  "oracle": "imagemagick",
+  "sha256": "cec62b56ce1706fc38c68615ef77d15cfc49476368f494cced18c0434d8f28ab",
+  "width": 37
+ },
+ "sun/xrgb-rgb.ras": {
+  "height": 23,
+  "oracle": "imagemagick",
+  "sha256": "cec62b56ce1706fc38c68615ef77d15cfc49476368f494cced18c0434d8f28ab",
+  "width": 37
+ },
  "tga/flat-rle-crossrows.tga": {
   "height": 40,
   "oracle": "pillow",
@@ -687,6 +909,102 @@
   "height": 23,
   "oracle": "pillow",
   "sha256": "6827c4942eea46fff7cb0d433227fb8799c20ae3ff270302bc9bb592742ab681",
+  "width": 37
+ },
+ "xbm/hotspot-crlf.xbm": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "383c8f8aca1eadc5a4cbfb25a347364202203d3c17f2326a51e869072ec1b9e1",
+  "width": 37
+ },
+ "xbm/im-big.xbm": {
+  "height": 120,
+  "oracle": "pillow",
+  "sha256": "a9e80e0f1fc7fbd918c9b80ac5e7debdb5e169ef637a67254868ef1a67a11041",
+  "width": 160
+ },
+ "xbm/im.xbm": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "9716d2beb81ae1ba8aa35a775aac010e287136214411f4abd3f642d8c3ad5552",
+  "width": 37
+ },
+ "xbm/one-pixel.xbm": {
+  "height": 1,
+  "oracle": "pillow",
+  "sha256": "e3820096cb82366b860b8a4e668453a7aaaf423af03bdf289fa308ea03a79332",
+  "width": 1
+ },
+ "xbm/pil-hotspot.xbm": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "49e8602376aad1edcb8078ca728060dcf2db8f5bbe6cc5111bdffccd8fdd9d46",
+  "width": 37
+ },
+ "xbm/pil.xbm": {
+  "height": 23,
+  "oracle": "pillow",
+  "sha256": "49e8602376aad1edcb8078ca728060dcf2db8f5bbe6cc5111bdffccd8fdd9d46",
+  "width": 37
+ },
+ "xbm/x10.xbm": {
+  "height": 23,
+  "oracle": "imagemagick",
+  "sha256": "383c8f8aca1eadc5a4cbfb25a347364202203d3c17f2326a51e869072ec1b9e1",
+  "width": 37
+ },
+ "xpm/cpp2-ext.xpm": {
+  "height": 23,
+  "oracle": "imagemagick",
+  "sha256": "511ad83300381c296236067296d37517b0e18c8e5d01d563d358824995c2c5b3",
+  "width": 37
+ },
+ "xpm/hex-cpp2.xpm": {
+  "height": 23,
+  "oracle": "imagemagick",
+  "sha256": "6c2f466d2661fb29afdf846d86b83369fc58647f688c4ed8d9ee0eebcf730160",
+  "width": 37
+ },
+ "xpm/im-gray.xpm": {
+  "height": 23,
+  "oracle": "imagemagick",
+  "sha256": "0184f8c7b689eba6db127da2e888332c3090dec5a96973fddb58489d82878325",
+  "width": 37
+ },
+ "xpm/im-palette.xpm": {
+  "height": 23,
+  "oracle": "imagemagick",
+  "sha256": "49906f7002f9af00e3700776c749db2155a7e9072f28a5ac5462e3eecb08d4f4",
+  "width": 37
+ },
+ "xpm/im-rgb.xpm": {
+  "height": 23,
+  "oracle": "imagemagick",
+  "sha256": "85ce64b763824236da2d45bd950c7ec44d31351e7e077271fd41c4ceff159285",
+  "width": 37
+ },
+ "xpm/im-rgba.xpm": {
+  "height": 23,
+  "oracle": "imagemagick",
+  "sha256": "c33d6aa8e6e29ad78116e3a3b4ef772f12e3469571310f5f8f09a10f4732e4a0",
+  "width": 37
+ },
+ "xpm/names.xpm": {
+  "height": 23,
+  "oracle": "imagemagick",
+  "sha256": "2a9edb42f2ea28d41d6e0dc0bccd539aca328f13ceeadc50ed5694669e04f0bf",
+  "width": 37
+ },
+ "xpm/one-pixel.xpm": {
+  "height": 1,
+  "oracle": "imagemagick",
+  "sha256": "09349ae9fcc935c5d4a7dd1bebced6bef54f32ae3bf48ff1d92cc61b220859b2",
+  "width": 1
+ },
+ "xpm/visuals-cpp3.xpm": {
+  "height": 23,
+  "oracle": "imagemagick",
+  "sha256": "72efe31d5e31be0d1ca9a618f65f5344309b93bd43644ceddf5a3daf7c9035cd",
   "width": 37
  }
 }

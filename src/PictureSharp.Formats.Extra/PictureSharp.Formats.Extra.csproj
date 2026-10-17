@@ -7,8 +7,8 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <PackageId>PictureSharp.Formats.Extra</PackageId>
-    <Description>QOI, PNM, TGA, DDS, PSD and more image formats for PictureSharp, written entirely in C#. No native dependencies.</Description>
-    <PackageTags>picturesharp;image;qoi;pnm;ppm;pgm;pam;tga;targa;dds;directdraw;bc7;bc6h;psd;psb;photoshop;codec;decoder;encoder</PackageTags>
+    <Description>QOI, PNM, TGA, DDS, PSD, SGI, Sun Raster, XBM and XPM image formats for PictureSharp, written entirely in C#. No native dependencies.</Description>
+    <PackageTags>picturesharp;image;qoi;pnm;ppm;pgm;pam;tga;targa;dds;directdraw;bc7;bc6h;psd;psb;photoshop;sgi;sunraster;xbm;xpm;codec;decoder;encoder</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/art-ix/PictureSharp.Formats.Extra</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>

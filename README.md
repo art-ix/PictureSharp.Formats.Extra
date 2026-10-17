@@ -9,8 +9,10 @@
 | TGA | `.tga` `.icb` `.vda` `.vst` | colour-mapped, true-colour, greyscale; RLE; any origin | 8-bit grey, 24-bit, 32-bit; RLE |
 | DDS | `.dds` | DX9 and DX10 headers; BC1–BC5, BC6H, BC7; bit-mask layouts (8–32 bit), luminance, 8-bit palette | 32-bit BGRA or BGRX |
 | PSD | `.psd` `.psb` | merged image: bitmap, greyscale, duotone, indexed, RGB, CMYK; 8 and 16 bit; raw and PackBits | — |
-
-Planned: SGI, Sun Raster, XBM/XPM.
+| SGI | `.sgi` `.rgb` `.rgba` `.bw` | 1–4 channels, 8 and 16 bit, verbatim and RLE | grey, RGB, RGBA (8 bit); RLE |
+| Sun Raster | `.ras` `.sun` | 1, 4, 8 bit with or without a colour map; 24, 32 bit; RLE | — |
+| XBM | `.xbm` | X10 and X11 | X11 |
+| XPM | `.xpm` | XPM3, up to 4 characters per pixel, hex colours, X11 colour names, `None` | — |
 
 ```bash
 dotnet add package PictureSharp.Formats.Extra
@@ -51,6 +53,17 @@ through `DecoderOptions.Configuration` and `EncoderOptions.Configuration`.
   bitmap images stay opaque), and RGB colours, which Photoshop composites over white, are then unblended exactly as
   ImageMagick does; greyscale and CMYK colours are kept, as in ImageMagick. ICC, EXIF, XMP and the resolution are read
   from the image resources. Lab, multichannel, 32-bit and ZIP-compressed image data throw `NotSupportedException`.
+- SGI 16-bit samples are reduced to round(value / 257), and two channels are grey and alpha. Colour-map SGI files
+  (dithered, screen, colour map) throw `NotSupportedException`.
+- Sun Raster RLE runs cover the row padding and may cross rows, as in the specification, ImageMagick and Netpbm
+  (Pillow 10.2.0 leaves the padding out). The first byte of a 32-bit pixel is padding, as in the specification and
+  Netpbm (Pillow takes the last byte, ImageMagick reads it as alpha). Type 3 stores RGB, every other type BGR, also
+  when byte-encoded (ImageMagick swaps those colours). A 1-bit image with a colour map indexes the map.
+- XBM set bits are black, as in X11 and ImageMagick (Pillow decodes them as white). The encoder writes a set bit for
+  pixels at least half opaque with a luma below 128, and can write a hotspot; the decoder skips the hotspot.
+- XPM colours take the `c` visual, then `g`, `g4` and `m`; hexadecimal colours with 1–4 digits per channel are scaled
+  to 8 bits with rounding and names come from X.Org's `rgb.txt` (X11 values, so `gray` is 190). `None` is transparent
+  black. HSV colours and unknown names throw `NotSupportedException`.
 - Encoders keep the first frame and write no ICC, EXIF or XMP blocks. PBM, PGM and PPM drop alpha.
 - Corrupt input throws `ImageFormatException`, valid input with unsupported features throws `NotSupportedException`,
   and `DecoderOptions.MaxPixels` is checked before any pixels are allocated.

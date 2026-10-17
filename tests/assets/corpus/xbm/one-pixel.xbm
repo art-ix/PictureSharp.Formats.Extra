@@ -1,0 +1,3 @@
+#define o_width 1
+#define o_height 1
+static char o_bits[] = { 0x01 };
