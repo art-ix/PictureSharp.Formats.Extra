@@ -1,7 +1,7 @@
 # Working on PictureSharp.Formats.Extra
 
 PictureSharp.Formats.Extra is a format plugin for [PictureSharp](https://github.com/art-ix/PictureSharp) that adds QOI,
-Netpbm and TGA (and later DDS) entirely in C#. It is a separate repository and package with its own
+Netpbm and TGA (and later DDS, KTX, PSD/PSB, SGI, Sun Raster, XBM and XPM) entirely in C#. It is a separate repository and package with its own
 version; it uses PictureSharp only through its public NuGet API.
 
 Before starting, read [plan.md](plan.md) to identify the current version and its definition of done (DoD), then read
@@ -14,11 +14,12 @@ go to the core repository's `plan.md` (sibling folder `../PictureSharp`).
 
 - Target `net10.0` with C# 14 (`LangVersion=14.0`); support .NET 10 and later.
 - `src/PictureSharp.Formats.Extra` depends only on the `PictureSharp` package (minimum version in
-  `Directory.Build.props`) and the BCL: no other `PackageReference`, native libraries, P/Invoke or
-  `System.IO.Compression`. Use only public PictureSharp API; no `InternalsVisibleTo` or reflection. An architecture
-  test checks this.
-- Copy no code from the core. TIFF, which needs the core's zlib inflate, lives in the separate PictureSharp.Tiff
-  package (`../PictureSharp.Tiff`).
+  `Directory.Build.props`) and the BCL: no other `PackageReference`, native libraries or P/Invoke. Use only public
+  PictureSharp API; no `InternalsVisibleTo` or reflection. An architecture test checks this.
+- `System.IO.Compression` is allowed for decompression (`ZLibStream`, `DeflateStream`; decided by the user on
+  2026-10-17): it ships with the runtime on every platform. Do not use it in encoders whose output tests compare
+  bytes, since the bundled zlib-ng may change its output between runtime versions.
+- Copy no code from the core. TIFF lives in the separate PictureSharp.Tiff package (`../PictureSharp.Tiff`).
 - Do not use the `unsafe` keyword. Use `Span<T>`, `ref`, `Unsafe.Add` and `MemoryMarshal`.
 - Each format is a public `XxxFormat : IImageFormatModule` in `PictureSharp.Formats.<Format>`, with an
   `XxxEncoderOptions` record and extension blocks (`SaveAsXxx`, `ToXxx`, `ImageFormat.Xxx`). Codecs are `internal`.
