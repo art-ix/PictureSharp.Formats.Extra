@@ -1,5 +1,6 @@
 using PictureSharp.Formats.Dds;
 using PictureSharp.Formats.Pnm;
+using PictureSharp.Formats.Psd;
 using PictureSharp.Formats.Qoi;
 using PictureSharp.Formats.Tga;
 
@@ -13,8 +14,8 @@ namespace PictureSharp.Formats.Extra;
 /// </example>
 public static class ExtraFormats
 {
-    /// <summary>A new module for every format of the package: QOI, PNM, TGA and DDS.</summary>
-    public static IReadOnlyList<IImageFormatModule> CreateModules() => [new QoiFormat(), new PnmFormat(), new TgaFormat(), new DdsFormat()];
+    /// <summary>A new module for every format of the package: QOI, PNM, TGA, DDS and PSD.</summary>
+    public static IReadOnlyList<IImageFormatModule> CreateModules() => [new QoiFormat(), new PnmFormat(), new TgaFormat(), new DdsFormat(), new PsdFormat()];
 
     extension(ImageConfigurationBuilder builder)
     {

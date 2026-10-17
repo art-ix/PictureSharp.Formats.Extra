@@ -8,8 +8,9 @@
 | Netpbm | `.pbm` `.pgm` `.ppm` `.pnm` `.pam` | P1–P7, plain and binary, maxval up to 65535 | PBM, PGM, PPM (plain or binary), PAM |
 | TGA | `.tga` `.icb` `.vda` `.vst` | colour-mapped, true-colour, greyscale; RLE; any origin | 8-bit grey, 24-bit, 32-bit; RLE |
 | DDS | `.dds` | DX9 and DX10 headers; BC1–BC5, BC6H, BC7; bit-mask layouts (8–32 bit), luminance, 8-bit palette | 32-bit BGRA or BGRX |
+| PSD | `.psd` `.psb` | merged image: bitmap, greyscale, duotone, indexed, RGB, CMYK; 8 and 16 bit; raw and PackBits | — |
 
-Planned: KTX/KTX2, PSD/PSB, SGI, Sun Raster, XBM/XPM. TIFF is a separate package, PictureSharp.Tiff.
+Planned: SGI, Sun Raster, XBM/XPM. TIFF is a separate package, PictureSharp.Tiff.
 
 ```bash
 dotnet add package PictureSharp.Formats.Extra
@@ -44,6 +45,12 @@ through `DecoderOptions.Configuration` and `EncoderOptions.Configuration`.
   BC6H follows the D3D11 spec, matching bcdec; half floats are clamped to [0, 1] and truncated after × 255. DXT2/DXT4
   and the DX10 premultiplied alpha mode are unpremultiplied. Float, YUV, ASTC and ETC formats throw
   `NotSupportedException`.
+- PSD and PSB decode only the merged image; layers, masks and effects are skipped. 16-bit samples are reduced to
+  round(value / 257); CMYK converts as Pillow 10.2.0 does, without the ICC profile; 1 bits of a bitmap are black.
+  The first extra channel is the transparency when the layer count is negative or the file has no layers (indexed and
+  bitmap images stay opaque), and RGB colours, which Photoshop composites over white, are then unblended exactly as
+  ImageMagick does; greyscale and CMYK colours are kept, as in ImageMagick. ICC, EXIF, XMP and the resolution are read
+  from the image resources. Lab, multichannel, 32-bit and ZIP-compressed image data throw `NotSupportedException`.
 - Encoders keep the first frame and write no ICC, EXIF or XMP blocks. PBM, PGM and PPM drop alpha.
 - Corrupt input throws `ImageFormatException`, valid input with unsupported features throws `NotSupportedException`,
   and `DecoderOptions.MaxPixels` is checked before any pixels are allocated.

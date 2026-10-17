@@ -5,7 +5,10 @@ Pillow 10.2.0 decodes the files; files it cannot read (PAM, TGA with 32-bit colo
 8-bit PNG first. DDS files with a DX10 header for a format Pillow reads only from a DX9 header (BC1 sRGB, BC2, BC3,
 16-bit and BGRA layouts) are decoded by Pillow after replacing the header with the equivalent DX9 one ("pillow-dx9").
 BC6H files are decoded by bcdec (reference/bcdec/bcdec.h, not committed; see bc6h_reference.c) because Pillow 10.2.0
-deviates from the BC6H spec ("bcdec"). The "oracle" field records which path was used.
+deviates from the BC6H spec ("bcdec"). PSD files use Pillow when it agrees with ImageMagick and ImageMagick otherwise:
+Pillow inverts 1-bit bitmaps, ignores alpha except in 4-channel RGB, does not unblend the merged image from white and
+reads neither 16-bit nor PSB. ImageMagick takes alpha only from a negative layer count, so files without a layer
+section are decoded after inserting one with count -1 ("imagemagick-layers"). The "oracle" field records the path.
 16-bit greyscale (Pillow mode I) is reduced as round(v / 65535 * 255), ties to even, the decoder's documented rule.
 
 Run with:  python3 -I tests/assets/make_reference.py
@@ -80,7 +83,60 @@ def via_bcdec(file):
     return (w, h), rgba_bytes, "bcdec"
 
 
+PSD_BASE_CHANNELS = {0: 1, 1: 1, 2: 1, 3: 3, 4: 4, 8: 1}
+
+
+def psd_with_negative_layer_count(data):
+    """The file with an empty layer section replaced by one holding a single empty layer and the count -1."""
+    version, channels, mode = struct.unpack_from(">H", data, 4)[0], struct.unpack_from(">H", data, 12)[0], struct.unpack_from(">H", data, 24)[0]
+    if channels <= PSD_BASE_CHANNELS.get(mode, 99) or mode in (0, 2):
+        return None
+    pos = 26
+    pos += 4 + struct.unpack_from(">I", data, pos)[0]
+    pos += 4 + struct.unpack_from(">I", data, pos)[0]
+    wide = ">Q" if version == 2 else ">I"
+    if struct.unpack_from(wide, data, pos)[0] != 0:
+        return None
+    record = struct.pack(">4iH", 0, 0, 0, 0, 3) + b"".join(struct.pack(">hI", c, 2) for c in (0, 1, 2))
+    record += b"8BIMnorm" + bytes([255, 0, 0, 0]) + struct.pack(">I", 12) + struct.pack(">II", 0, 0) + b"\0\0\0\0"
+    info = struct.pack(">h", -1) + record + b"\0\0" * 3
+    section = struct.pack(wide, len(info)) + info + struct.pack(">I", 0)
+    return data[:pos] + struct.pack(wide, len(section)) + section + data[pos + struct.calcsize(wide):]
+
+
+def via_imagemagick16(file):
+    """ImageMagick's 16-bit RGBA reduced as round(v / 257): its own -depth 8 output truncates."""
+    with tempfile.TemporaryDirectory() as tmp:
+        raw = os.path.join(tmp, "x.rgba")
+        subprocess.run(["convert", file, "-depth", "16", "RGBA:" + raw], check=True)
+        size = subprocess.run(["identify", "-format", "%w %h", file], check=True, capture_output=True, text=True).stdout.split()
+        v = np.fromfile(raw, "<u2").astype(np.int64)
+        return (int(size[0]), int(size[1])), ((v + 128) // 257).astype(np.uint8).tobytes(), "imagemagick"
+
+
+def psd(file):
+    try:
+        with Image.open(file) as im:
+            im.load()
+            pillow = im.size, np.asarray(im.convert("RGBA")).tobytes(), "pillow"
+    except (OSError, ValueError, KeyError, SyntaxError):
+        pillow = None
+    changed = psd_with_negative_layer_count(open(file, "rb").read())
+    if changed is not None:
+        with tempfile.TemporaryDirectory() as tmp:
+            copy = os.path.join(tmp, "x.psd")
+            open(copy, "wb").write(changed)
+            size, data, _ = via_imagemagick16(copy + "[0]")
+            return size, data, "imagemagick-layers"
+    magick = via_imagemagick16(file + "[0]")
+    if pillow and pillow[:2] == magick[:2]:
+        return pillow
+    return magick
+
+
 def rgba(file):
+    if file.lower().endswith((".psd", ".psb")):
+        return psd(file)
     special = via_bcdec(file)
     if special:
         return special

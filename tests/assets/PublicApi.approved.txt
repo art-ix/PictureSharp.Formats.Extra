@@ -72,6 +72,17 @@ PictureSharp.Formats.Pnm.PnmImageExtensions
   Void SaveAsPnm(PictureSharp.Image, System.IO.Stream, PictureSharp.Formats.Pnm.PnmEncoderOptions)
   Void SaveAsPnm(PictureSharp.Image, System.String, PictureSharp.Formats.Pnm.PnmEncoderOptions)
 PictureSharp.Formats.Pnm.PnmKind
+PictureSharp.Formats.Psd.PsdFormat
+  Boolean IsSupported(System.ReadOnlySpan`1[System.Byte])
+  Int32 HeaderSize
+  Int32 get_HeaderSize()
+  PictureSharp.Formats.IImageFormatDecoder Decoder
+  PictureSharp.Formats.IImageFormatDecoder get_Decoder()
+  PictureSharp.ImageFormat Format
+  PictureSharp.ImageFormat get_Format()
+  Void .ctor()
+PictureSharp.Formats.Psd.PsdImageExtensions
+  PictureSharp.ImageFormat get_Psd()
 PictureSharp.Formats.Qoi.QoiColorSpace
 PictureSharp.Formats.Qoi.QoiEncoderOptions
   Boolean Equals(PictureSharp.EncoderOptions)

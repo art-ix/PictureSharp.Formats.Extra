@@ -1,7 +1,7 @@
 # PictureSharp.Formats.Extra: plan
 
-Wtyczka z dodatkowymi formatami dla PictureSharp: QOI, PNM i TGA (odczyt i zapis), DDS, KTX/KTX2, PSD/PSB, SGI,
-Sun Raster oraz XBM/XPM. Osobne repozytorium
+Wtyczka z dodatkowymi formatami dla PictureSharp: QOI, PNM i TGA (odczyt i zapis), DDS, PSD/PSB, SGI, Sun
+Raster oraz XBM/XPM. Osobne repozytorium
 i własny SemVer, wzorowane na `PictureSharp.Heif`. Zależność wyłącznie od publicznego pakietu `PictureSharp`
 (minimum 0.7.1), bez kopii kodu rdzenia.
 
@@ -17,13 +17,12 @@ runtime na każdej platformie). Rdzeń zrezygnuje z tej reguły w przyszłości.
 | --- | --- | --- |
 | 0.1.0 | Szkielet repo, QOI, PNM, TGA (odczyt i zapis) | W toku: kod i testy gotowe (commit b891c11), bez CI i wydania |
 | 0.2.0 | DDS: DX9/DX10, nieskompresowane, BC1–BC5, BC7, BC6H; zapis BGRA8/BGRX8 | W toku: kod i testy gotowe (2026-10-17), bez commita i wydania |
-| 0.3.0 | KTX 1 i KTX 2 (odczyt): nieskompresowane i BC1–BC7/BC6H z dekoderów DDS | Planowana |
-| 0.4.0 | PSD/PSB (odczyt obrazu scalonego) | Planowana |
-| 0.5.0 | SGI (odczyt i zapis), Sun Raster (odczyt), XBM (odczyt i zapis), XPM (odczyt) | Planowana |
+| 0.3.0 | PSD/PSB (odczyt obrazu scalonego) | W toku: kod i testy gotowe (2026-10-17), bez commita i wydania |
+| 0.4.0 | SGI (odczyt i zapis), Sun Raster (odczyt), XBM (odczyt i zapis), XPM (odczyt) | Planowana |
 
-Decyzja użytkownika (2026-10-17): po DDS dochodzą KTX/KTX2, PSD/PSB, SGI, Sun Raster i XBM/XPM. Poza zakresem: CUR
+Decyzja użytkownika (2026-10-17): po DDS dochodzą PSD/PSB, SGI, Sun Raster i XBM/XPM. Poza zakresem: CUR
 (pasuje do rdzenia obok ICO), formaty HDR (Radiance, OpenEXR — czekają na HDR SPI), AVIF/JPEG XL/JPEG 2000 (osobne
-pakiety jak `PictureSharp.Heif`), BLP, FLI/FLC, DCX.
+pakiety jak `PictureSharp.Heif`), BLP, FLI/FLC, DCX. KTX/KTX2 wycofany decyzją użytkownika (2026-10-17).
 
 ## 0.1.0 — QOI, PNM, TGA
 
@@ -54,7 +53,7 @@ Pozostało do DoD:
 
 Zrobione (2026-10-17):
 - `DdsFormat`, `DdsEncoderOptions` (`DdsPixelFormat` Auto/Bgra32/Bgrx32), skróty `SaveAsDds`/`ToDds`/`ImageFormat.Dds`;
-  dekodery bloków w `Common/BlockCompression/` (do ponownego użycia w KTX).
+  dekodery bloków w `Common/BlockCompression/`.
 - DX9: maski RGB/luminancja/alfa 8–32 bit (skalowanie jak Pillow `int(v / max * 255)`), L8, LA8, paleta P8, FourCC
   DXT1–DXT5 (DXT2/DXT4 z odwróceniem premultiplikacji), ATI1/ATI2, BC4U/BC4S/BC5U/BC5S. DX10: BC1–BC7, BC6H UF16/SF16,
   RGBA8/BGRA8/BGRX8 (UNORM, SRGB, TYPELESS), B5G6R5, B5G5R5A1, B4G4R4A4, R10G10B10A2, R8, R8G8, A8; tryb alfy DX10
@@ -72,17 +71,7 @@ Zrobione (2026-10-17):
 Pozostało do DoD: próbki BC6H/BC7 z prawdziwych enkoderów (`texconv`/`nvcompress`, brak na tej maszynie; korpus
 pokrywa wszystkie tryby losowymi blokami), smoke test trimming/AOT razem z 0.1.0, commit, release notes.
 
-## 0.3.0 — KTX i KTX2
-
-- KTX 1 (`glInternalFormat`) i KTX 2 (`vkFormat`, DFD tylko do walidacji); poziom mip 0, pierwsza warstwa/ściana jak
-  w DDS. Formaty: RGBA8/BGRA8/RGB8/R8/RG8 (UNORM i SRGB), BC1–BC5, BC7, BC6H przez wspólne dekodery bloków z 0.2.0
-  (przeniesione do `Common/`).
-- Supercompression zlib przez `ZLibStream`. `NotSupportedException`: zstd (brak w .NET 10), BasisLZ, UASTC, ETC1/ETC2/EAC, ASTC, PVRTC, formaty
-  float poza BC6H, 3D. Kolejność bajtów KTX 1 big-endian obsługiwana.
-- DoD: piksele = `toktx`/libktx lub ImageMagick (zgoda na narzędzie), korpus generowany z tych samych źródeł co DDS;
-  wykrywanie po identyfikatorze (12 bajtów), fuzzing nagłówków.
-
-## 0.4.0 — PSD/PSB
+## 0.3.0 — PSD/PSB
 
 - Tylko obraz scalony (sekcja Image Data); warstwy, maski i efekty pomijane (sekcje czytane jako długości). Kompresja
   raw i PackBits; ZIP (tylko w warstwach) nie jest potrzebny. PSB: 64-bitowe długości sekcji i wymiary do 300 000.
@@ -93,7 +82,26 @@ pokrywa wszystkie tryby losowymi blokami), smoke test trimming/AOT razem z 0.1.0
 - DoD: piksele = Pillow 10.2.0 (8 bit) i ImageMagick (PSB, 16 bit); próbki z GIMP/ImageMagick/Krita, ewentualny
   korpus zewnętrzny po zgodzie użytkownika.
 
-## 0.5.0 — SGI, Sun Raster, XBM, XPM
+Zrobione (2026-10-17):
+- `PsdFormat` (tylko odczyt, `.psd`/`.psb`), `ImageFormat.Psd`; bez opcji enkodera i skrótów zapisu.
+- Tryby Bitmap (1 bit, 1 = czarny jak w specyfikacji i ImageMagick; Pillow odwraca), Grayscale, Duotone (jako szary),
+  Indexed (paleta planarna 768 B), RGB, CMYK (wzór Pillow `cmyk2rgb` po redukcji do 8 bit); 8 i 16 bit
+  (`round(v / 257)`); raw i PackBits (tabela długości 2 B w PSD, 4 B w PSB). Lab, Multichannel, 32 bit, ZIP →
+  `NotSupportedException`.
+- Alfa (decyzja użytkownika: „jak Photoshop”): pierwszy dodatkowy kanał, gdy liczba warstw < 0 (także w blokach
+  Lr16/Lr32/Layr) lub brak warstw; Indexed i Bitmap zawsze nieprzezroczyste. Kolory RGB odmatowane z białego dokładnie
+  jak ImageMagick Q16 (double, ta sama kolejność działań, potem 16 → 8 bit); szarość i CMYK bez odmatowania, jak w
+  ImageMagick.
+- Metadane: ICC 1039, EXIF 1058, XMP 1060 (z `ReserveMetadata`, pomijane przy `IgnoreMetadata`), rozdzielczość 1005.
+- Korpus 30 plików (ImageMagick + własny writer: bez warstw, dodatnia liczba warstw z kanałem zaznaczenia, dwa kanały
+  dodatkowe, 16 bit raw/PackBits, PSB raw, duotone, zasoby z nazwą i nieparzystą długością). Referencje: Pillow, gdy
+  zgadza się z ImageMagick, inaczej ImageMagick 16 bit zaokrąglony w Pythonie (`-depth 8` ImageMagick obcina);
+  pliki bez warstw przez kopię z liczbą warstw −1 („imagemagick-layers”).
+
+Pozostało do DoD: próbki z GIMP/Krity/Photoshopa (brak narzędzi na tej maszynie; zewnętrzny korpus tylko po zgodzie),
+w tym sprawdzenie odmatowania szarości/CMYK na plikach z Photoshopa; commit, release notes.
+
+## 0.4.0 — SGI, Sun Raster, XBM, XPM
 
 - SGI (`.sgi`, `.rgb`, `.rgba`, `.bw`): verbatim i RLE, 1–4 kanały, 8 i 16 bit; zapis 8-bit z RLE i bez (jak Pillow).
 - Sun Raster (`.ras`): 1/8/24/32 bpp, typy standard/RLE/RGB, mapa kolorów; tylko odczyt.

@@ -38,8 +38,9 @@ Pillow (https://python-pillow.org), version 10.2.0, the friendly fork of the
 Python Imaging Library
 Used for: sample conversion rules matched bit for bit: Netpbm maxval scaling
 (PpmImagePlugin.py PpmDecoder), 15-bit TGA colour (Unpack.c
-ImagingUnpackBGR15) and greyscale luma (Convert.c rgb2l). The code was
-translated to C#; it is not the original source.
+ImagingUnpackBGR15), greyscale luma (Convert.c rgb2l) and PSD CMYK to RGB
+(Convert.c cmyk2rgb). The code was translated to C#; it is not the original
+source.
 -------------------------------------------------------------------------------
 Copyright (c) 1997-2011 by Secret Labs AB
 Copyright (c) 1995-2011 by Fredrik Lundh and contributors
@@ -66,3 +67,14 @@ OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
 DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
 TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
+
+-------------------------------------------------------------------------------
+ImageMagick (https://imagemagick.org), version 6.9.12
+Used for: the formula that unblends the merged PSD image from white
+(coders/psd.c CorrectPSDAlphaBlend), reimplemented in C# with the same
+double-precision operation order so the results match ImageMagick's Q16 build.
+No ImageMagick source is included.
+-------------------------------------------------------------------------------
+Copyright 1999 ImageMagick Studio LLC, a non-profit organization dedicated to
+making software imaging solutions freely available.
+Licensed under the ImageMagick License: https://imagemagick.org/script/license.php

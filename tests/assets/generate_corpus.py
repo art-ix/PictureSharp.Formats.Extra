@@ -3,7 +3,7 @@
 
 Sources are synthetic. Variants come from Pillow 10.2.0 and ImageMagick `convert`; small writers below produce the
 layouts no tool writes (QOI, unusual PNM maxvals and comments, 15/16-bit and right-to-left TGA, RLE across rows, DDS
-headers for every BC format). DDS block data is random with the BC6H/BC7 mode bits chosen evenly, so every mode,
+headers for every BC format, PSD layouts ImageMagick does not write). DDS block data is random with the BC6H/BC7 mode bits chosen evenly, so every mode,
 partition and anchor is decoded; no encoder for BC4-BC7 is needed.
 The QOI writer is a line-by-line port of qoi.h qoi_encode, so its files also check the C# encoder byte for byte.
 
@@ -402,6 +402,126 @@ def dds(s):
     dds_custom("palette8.dds", pw, ph, palette + rng.integers(0, 256, pw * ph, dtype=np.uint8).tobytes(), bitcount=8, flags=DDPF_PAL8)
 
 
+# --------------------------------------------------------------------------- PSD
+
+def packbits(row):
+    """PackBits as Photoshop writes it: runs of 3+ equal bytes as repeats, the rest as literals of up to 128 bytes."""
+    out, i, n = bytearray(), 0, len(row)
+    while i < n:
+        j = i
+        while j + 1 < n and row[j + 1] == row[i] and j - i < 127:
+            j += 1
+        if j - i >= 2:
+            out += bytes([257 - (j - i + 1), row[i]])
+            i = j + 1
+            continue
+        j = i
+        while j < n and j - i < 128 and not (j + 2 < n and row[j] == row[j + 1] == row[j + 2]):
+            j += 1
+        out += bytes([j - i - 1]) + bytes(row[i:j])
+        i = j
+    return bytes(out)
+
+
+def psd_layer_info(count):
+    """A layer info block with one empty layer (0x0 bounds, three empty channels) and the given signed count."""
+    record = struct.pack(">4iH", 0, 0, 0, 0, 3) + b"".join(struct.pack(">hI", c, 2) for c in (0, 1, 2))
+    record += b"8BIMnorm" + bytes([255, 0, 0, 0]) + struct.pack(">I", 12) + struct.pack(">II", 0, 0) + b"\0\0\0\0"
+    body = struct.pack(">h", count) + record + b"\0\0" * 3
+    if len(body) & 1:
+        body += b"\0"
+    return body
+
+
+def psd_custom(name, mode, planes, depth=8, compression=1, version=1, layers=None, color_data=b"", resources=b""):
+    """Writes a PSD (version 1) or PSB (version 2) whose merged image holds the given planes (uint8 or big-endian uint16)."""
+    h, w = planes[0].shape
+    wide = ">Q" if version == 2 else ">I"
+    header = b"8BPS" + struct.pack(">H", version) + b"\0" * 6 + struct.pack(">HIIHH", len(planes), h, w, depth, mode)
+    header += struct.pack(">I", len(color_data)) + color_data + struct.pack(">I", len(resources)) + resources
+    if layers is None:
+        header += struct.pack(wide, 0)
+    else:
+        info = psd_layer_info(layers)
+        section = struct.pack(wide, len(info)) + info + struct.pack(">I", 0)
+        header += struct.pack(wide, len(section)) + section
+    rows = []
+    for plane in planes:
+        if depth == 1:
+            rows += [np.packbits(r).tobytes() for r in plane]
+        else:
+            rows += [r.astype(">u2" if depth == 16 else np.uint8).tobytes() for r in plane]
+    if compression == 0:
+        body = struct.pack(">H", 0) + b"".join(rows)
+    else:
+        packed = [packbits(r) for r in rows]
+        counts = b"".join(struct.pack(">I" if version == 2 else ">H", len(p)) for p in packed)
+        body = struct.pack(">H", 1) + counts + b"".join(packed)
+    open(path("psd", name), "wb").write(header + body)
+
+
+def psd_resource(rid, data):
+    return b"8BIM" + struct.pack(">H", rid) + b"\0\0" + struct.pack(">I", len(data)) + data + b"\0" * (len(data) & 1)
+
+
+def psd(s):
+    src = lambda name: path("src", name)
+    Image.fromarray(s["big"]).save(src("big.png"))
+    for name, args in [
+        ("im-rgb.psd", [src("photo.png")]),
+        ("im-rgb-raw.psd", [src("photo.png"), "-compress", "none"]),
+        ("im-big-rgb.psd", [src("big.png")]),
+        ("im-rgba.psd", [src("rgba.png")]),
+        ("im-gray.psd", [src("gray.png")]),
+        ("im-graya.psd", [src("graya.png")]),
+        ("im-bitmap.psd", [src("gray.png"), "-monochrome", "-depth", "1"]),
+        ("im-indexed.psd", [src("photo.png"), "-colors", "16"]),
+        ("im-cmyk.psd", [src("photo.png"), "-colorspace", "CMYK"]),
+        ("im-cmyka.psd", [src("rgba.png"), "-colorspace", "CMYK"]),
+        ("im-rgb16.psd", [src("photo.png"), "-depth", "16"]),
+        ("im-gray16.psd", [src("gray.png"), "-depth", "16"]),
+        ("im-rgba.psb", [src("rgba.png")]),
+        ("im-rgb16.psb", [src("photo.png"), "-depth", "16"]),
+    ]:
+        depth = [] if "-depth" in args else ["-depth", "8"]
+        target = ("PSB:" if name.endswith(".psb") else "") + path("psd", name)
+        run("convert", *args, *depth, target)
+
+    rng = np.random.default_rng(13)
+    photo, rgba, gray = s["photo"], s["rgba"], s["gray"]
+    rgb_planes = [photo[..., c] for c in range(3)]
+    rgba_planes = [rgba[..., c] for c in range(4)]
+    wide16 = lambda p: p.astype(np.uint16) * 257 + rng.integers(0, 257, p.shape).astype(np.uint16) % 257
+    # No layer section: the extra channel is the merged transparency.
+    psd_custom("rgba-nolayers.psd", 3, rgba_planes)
+    psd_custom("graya-nolayers-raw.psd", 1, [gray, rgba[..., 3]], compression=0)
+    psd_custom("cmyka-nolayers.psd", 4, [255 - photo[..., 0], 255 - photo[..., 1], 255 - photo[..., 2], gray, rgba[..., 3]])
+    # A positive layer count: the extra channel is a saved selection, the image stays opaque.
+    psd_custom("rgb-selection.psd", 3, rgba_planes, layers=1)
+    psd_custom("rgba-negative-count.psd", 3, rgba_planes, layers=-1)
+    # Two extra channels: only the first is alpha.
+    psd_custom("rgba-two-extra.psd", 3, rgba_planes + [gray])
+    # 16-bit samples with low bits that test the rounding, raw and PackBits, PSD and PSB.
+    psd_custom("rgb16-raw.psd", 3, [wide16(p) for p in rgb_planes], depth=16, compression=0)
+    # ImageMagick unblends in 16 bits, the decoder after the reduction: multiples of 257 keep them equal.
+    psd_custom("rgba16.psd", 3, [p.astype(np.uint16) * 257 for p in rgba_planes], depth=16)
+    # ImageMagick converts CMYK in 16 bits, the decoder after the reduction: multiples of 257 keep them equal.
+    psd_custom("cmyk16.psd", 4, [(255 - p).astype(np.uint16) * 257 for p in rgb_planes + [gray]], depth=16)
+    psd_custom("gray16-raw.psb", 1, [wide16(gray)], depth=16, compression=0, version=2)
+    psd_custom("rgba.psb", 3, rgba_planes, version=2, layers=-1)
+    # Duotone: the colour data is opaque to readers; the channel is grey.
+    psd_custom("duotone.psd", 8, [gray], color_data=bytes(rng.integers(0, 256, 1172, dtype=np.uint8)))
+    # Indexed with a full planar palette and a 1-bit bitmap with an odd width, both raw.
+    palette = bytes(rng.integers(0, 256, 768, dtype=np.uint8))
+    psd_custom("indexed-raw.psd", 2, [rng.integers(0, 256, gray.shape, dtype=np.uint8)], color_data=palette, compression=0)
+    psd_custom("bitmap-raw.psd", 0, [(gray < 128).astype(np.uint8)], depth=1, compression=0)
+    # Resources that must be skipped, including an odd-sized one and a named one.
+    res = psd_resource(1005, struct.pack(">IHHIHH", 300 << 16, 1, 1, 150 << 16, 1, 1)) + psd_resource(1028, b"\x1c\x02\x00\x00\x01")
+    res += b"8BIM" + struct.pack(">H", 2000) + b"\x03abc" + struct.pack(">I", 3) + b"xyz\0"
+    psd_custom("rgb-resources.psd", 3, rgb_planes, resources=res)
+    psd_custom("one-pixel.psd", 3, [np.array([[v]], np.uint8) for v in (10, 20, 30)])
+
+
 def main():
     shutil.rmtree(CORPUS, ignore_errors=True)
     os.makedirs(SRC)
@@ -410,6 +530,7 @@ def main():
     pnm(s)
     tga(s)
     dds(s)
+    psd(s)
     shutil.rmtree(SRC)
 
 
