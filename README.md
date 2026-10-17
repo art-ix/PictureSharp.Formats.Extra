@@ -10,7 +10,7 @@
 | DDS | `.dds` | DX9 and DX10 headers; BC1–BC5, BC6H, BC7; bit-mask layouts (8–32 bit), luminance, 8-bit palette | 32-bit BGRA or BGRX |
 | PSD | `.psd` `.psb` | merged image: bitmap, greyscale, duotone, indexed, RGB, CMYK; 8 and 16 bit; raw and PackBits | — |
 
-Planned: SGI, Sun Raster, XBM/XPM. TIFF is a separate package, PictureSharp.Tiff.
+Planned: SGI, Sun Raster, XBM/XPM.
 
 ```bash
 dotnet add package PictureSharp.Formats.Extra
