@@ -1,0 +1,114 @@
+PictureSharp.Formats.Extra.ExtraFormats
+  PictureSharp.ImageConfigurationBuilder AddExtraFormats(PictureSharp.ImageConfigurationBuilder)
+  System.Collections.Generic.IReadOnlyList`1[PictureSharp.Formats.IImageFormatModule] CreateModules()
+PictureSharp.Formats.Pnm.PnmEncoderOptions
+  Boolean Equals(PictureSharp.EncoderOptions)
+  Boolean Equals(PictureSharp.Formats.Pnm.PnmEncoderOptions)
+  Boolean Equals(System.Object)
+  Boolean Plain
+  Boolean get_Plain()
+  Boolean op_Equality(PictureSharp.Formats.Pnm.PnmEncoderOptions, PictureSharp.Formats.Pnm.PnmEncoderOptions)
+  Boolean op_Inequality(PictureSharp.Formats.Pnm.PnmEncoderOptions, PictureSharp.Formats.Pnm.PnmEncoderOptions)
+  Int32 GetHashCode()
+  PictureSharp.Formats.Pnm.PnmEncoderOptions <Clone>$()
+  PictureSharp.Formats.Pnm.PnmKind Kind
+  PictureSharp.Formats.Pnm.PnmKind get_Kind()
+  PictureSharp.ImageFormat Format
+  PictureSharp.ImageFormat get_Format()
+  System.String ToString()
+  Void .ctor()
+  Void set_Kind(PictureSharp.Formats.Pnm.PnmKind)
+  Void set_Plain(Boolean)
+PictureSharp.Formats.Pnm.PnmFormat
+  Boolean IsSupported(System.ReadOnlySpan`1[System.Byte])
+  Int32 HeaderSize
+  Int32 get_HeaderSize()
+  PictureSharp.Formats.IImageFormatDecoder Decoder
+  PictureSharp.Formats.IImageFormatDecoder get_Decoder()
+  PictureSharp.Formats.IImageFormatEncoder Encoder
+  PictureSharp.Formats.IImageFormatEncoder get_Encoder()
+  PictureSharp.ImageFormat Format
+  PictureSharp.ImageFormat get_Format()
+  Void .ctor()
+PictureSharp.Formats.Pnm.PnmImageExtensions
+  Byte[] ToPnm(PictureSharp.Image, PictureSharp.Formats.Pnm.PnmEncoderOptions)
+  PictureSharp.ImageFormat get_Pnm()
+  System.Threading.Tasks.Task SaveAsPnmAsync(PictureSharp.Image, System.IO.Stream, PictureSharp.Formats.Pnm.PnmEncoderOptions, System.Threading.CancellationToken)
+  System.Threading.Tasks.Task SaveAsPnmAsync(PictureSharp.Image, System.String, PictureSharp.Formats.Pnm.PnmEncoderOptions, System.Threading.CancellationToken)
+  Void SaveAsPnm(PictureSharp.Image, System.IO.Stream, PictureSharp.Formats.Pnm.PnmEncoderOptions)
+  Void SaveAsPnm(PictureSharp.Image, System.String, PictureSharp.Formats.Pnm.PnmEncoderOptions)
+PictureSharp.Formats.Pnm.PnmKind
+PictureSharp.Formats.Qoi.QoiColorSpace
+PictureSharp.Formats.Qoi.QoiEncoderOptions
+  Boolean Equals(PictureSharp.EncoderOptions)
+  Boolean Equals(PictureSharp.Formats.Qoi.QoiEncoderOptions)
+  Boolean Equals(System.Object)
+  Boolean op_Equality(PictureSharp.Formats.Qoi.QoiEncoderOptions, PictureSharp.Formats.Qoi.QoiEncoderOptions)
+  Boolean op_Inequality(PictureSharp.Formats.Qoi.QoiEncoderOptions, PictureSharp.Formats.Qoi.QoiEncoderOptions)
+  Int32 GetHashCode()
+  PictureSharp.Formats.Qoi.QoiEncoderOptions <Clone>$()
+  PictureSharp.ImageFormat Format
+  PictureSharp.ImageFormat get_Format()
+  System.Nullable`1[PictureSharp.Formats.Qoi.QoiColorSpace] ColorSpace
+  System.Nullable`1[PictureSharp.Formats.Qoi.QoiColorSpace] get_ColorSpace()
+  System.Nullable`1[System.Boolean] IncludeAlpha
+  System.Nullable`1[System.Boolean] get_IncludeAlpha()
+  System.String ToString()
+  Void .ctor()
+  Void set_ColorSpace(System.Nullable`1[PictureSharp.Formats.Qoi.QoiColorSpace])
+  Void set_IncludeAlpha(System.Nullable`1[System.Boolean])
+PictureSharp.Formats.Qoi.QoiFormat
+  Boolean IsSupported(System.ReadOnlySpan`1[System.Byte])
+  Int32 HeaderSize
+  Int32 get_HeaderSize()
+  PictureSharp.Formats.IImageFormatDecoder Decoder
+  PictureSharp.Formats.IImageFormatDecoder get_Decoder()
+  PictureSharp.Formats.IImageFormatEncoder Encoder
+  PictureSharp.Formats.IImageFormatEncoder get_Encoder()
+  PictureSharp.ImageFormat Format
+  PictureSharp.ImageFormat get_Format()
+  Void .ctor()
+PictureSharp.Formats.Qoi.QoiImageExtensions
+  Byte[] ToQoi(PictureSharp.Image, PictureSharp.Formats.Qoi.QoiEncoderOptions)
+  PictureSharp.ImageFormat get_Qoi()
+  System.Threading.Tasks.Task SaveAsQoiAsync(PictureSharp.Image, System.IO.Stream, PictureSharp.Formats.Qoi.QoiEncoderOptions, System.Threading.CancellationToken)
+  System.Threading.Tasks.Task SaveAsQoiAsync(PictureSharp.Image, System.String, PictureSharp.Formats.Qoi.QoiEncoderOptions, System.Threading.CancellationToken)
+  Void SaveAsQoi(PictureSharp.Image, System.IO.Stream, PictureSharp.Formats.Qoi.QoiEncoderOptions)
+  Void SaveAsQoi(PictureSharp.Image, System.String, PictureSharp.Formats.Qoi.QoiEncoderOptions)
+PictureSharp.Formats.Tga.TgaEncoderOptions
+  Boolean Equals(PictureSharp.EncoderOptions)
+  Boolean Equals(PictureSharp.Formats.Tga.TgaEncoderOptions)
+  Boolean Equals(System.Object)
+  Boolean Rle
+  Boolean get_Rle()
+  Boolean op_Equality(PictureSharp.Formats.Tga.TgaEncoderOptions, PictureSharp.Formats.Tga.TgaEncoderOptions)
+  Boolean op_Inequality(PictureSharp.Formats.Tga.TgaEncoderOptions, PictureSharp.Formats.Tga.TgaEncoderOptions)
+  Int32 GetHashCode()
+  PictureSharp.Formats.Tga.TgaEncoderOptions <Clone>$()
+  PictureSharp.Formats.Tga.TgaOrigin Origin
+  PictureSharp.Formats.Tga.TgaOrigin get_Origin()
+  PictureSharp.ImageFormat Format
+  PictureSharp.ImageFormat get_Format()
+  System.String ToString()
+  Void .ctor()
+  Void set_Origin(PictureSharp.Formats.Tga.TgaOrigin)
+  Void set_Rle(Boolean)
+PictureSharp.Formats.Tga.TgaFormat
+  Boolean IsSupported(System.ReadOnlySpan`1[System.Byte])
+  Int32 HeaderSize
+  Int32 get_HeaderSize()
+  PictureSharp.Formats.IImageFormatDecoder Decoder
+  PictureSharp.Formats.IImageFormatDecoder get_Decoder()
+  PictureSharp.Formats.IImageFormatEncoder Encoder
+  PictureSharp.Formats.IImageFormatEncoder get_Encoder()
+  PictureSharp.ImageFormat Format
+  PictureSharp.ImageFormat get_Format()
+  Void .ctor()
+PictureSharp.Formats.Tga.TgaImageExtensions
+  Byte[] ToTga(PictureSharp.Image, PictureSharp.Formats.Tga.TgaEncoderOptions)
+  PictureSharp.ImageFormat get_Tga()
+  System.Threading.Tasks.Task SaveAsTgaAsync(PictureSharp.Image, System.IO.Stream, PictureSharp.Formats.Tga.TgaEncoderOptions, System.Threading.CancellationToken)
+  System.Threading.Tasks.Task SaveAsTgaAsync(PictureSharp.Image, System.String, PictureSharp.Formats.Tga.TgaEncoderOptions, System.Threading.CancellationToken)
+  Void SaveAsTga(PictureSharp.Image, System.IO.Stream, PictureSharp.Formats.Tga.TgaEncoderOptions)
+  Void SaveAsTga(PictureSharp.Image, System.String, PictureSharp.Formats.Tga.TgaEncoderOptions)
+PictureSharp.Formats.Tga.TgaOrigin
