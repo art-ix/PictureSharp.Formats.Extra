@@ -2,23 +2,27 @@
 
 **More image formats for [PictureSharp](https://github.com/art-ix/PictureSharp), in 100% C#. No native dependencies.**
 
-| Format | Extensions | Read | Write |
-| --- | --- | :---: | :---: |
-| QOI | `.qoi` | RGB, RGBA | RGB, RGBA |
-| Netpbm | `.pbm` `.pgm` `.ppm` `.pnm` `.pam` | P1–P7, plain and binary, maxval up to 65535 | PBM, PGM, PPM (plain or binary), PAM |
-| TGA | `.tga` `.icb` `.vda` `.vst` | colour-mapped, true-colour, greyscale; RLE; any origin | 8-bit grey, 24-bit, 32-bit; RLE |
-| DDS | `.dds` | DX9 and DX10 headers; BC1–BC5, BC6H, BC7; bit-mask layouts (8–32 bit), luminance, 8-bit palette | 32-bit BGRA or BGRX |
-| PSD | `.psd` `.psb` | merged image: bitmap, greyscale, duotone, indexed, RGB, CMYK; 8 and 16 bit; raw and PackBits | — |
-| SGI | `.sgi` `.rgb` `.rgba` `.bw` | 1–4 channels, 8 and 16 bit, verbatim and RLE | grey, RGB, RGBA (8 bit); RLE |
-| Sun Raster | `.ras` `.sun` | 1, 4, 8 bit with or without a colour map; 24, 32 bit; RLE | — |
-| XBM | `.xbm` | X10 and X11 | X11 |
-| XPM | `.xpm` | XPM3, up to 4 characters per pixel, hex colours, X11 colour names, `None` | — |
-| VTF | `.vtf` | versions 7.0–7.6; 8- and 16-bit layouts, DXT1/3/5, ATI1N/ATI2N, Strata Source BC4–BC7; Deflate (7.6) | — |
-| ICNS | `.icns` | largest icon: PNG, RLE RGB with 8-bit mask, ARGB, 1-bit with mask | — |
+| Format | Read | Write |
+| --- | --- | --- |
+| [QOI](https://github.com/art-ix/PictureSharp.Formats.Extra/blob/main/docs/qoi.md) | RGB, RGBA | RGB, RGBA |
+| [Netpbm](https://github.com/art-ix/PictureSharp.Formats.Extra/blob/main/docs/netpbm.md) (PBM, PGM, PPM, PAM) | P1–P7, up to 16 bit | PBM, PGM, PPM, PAM |
+| [TGA](https://github.com/art-ix/PictureSharp.Formats.Extra/blob/main/docs/tga.md) | colour-mapped, true-colour, grey; RLE | 8, 24, 32 bit; RLE |
+| [DDS](https://github.com/art-ix/PictureSharp.Formats.Extra/blob/main/docs/dds.md) | BC1–BC7, uncompressed; mips, arrays, cube maps, volumes | 32-bit BGRA/BGRX |
+| [PSD, PSB](https://github.com/art-ix/PictureSharp.Formats.Extra/blob/main/docs/psd.md) | merged image, 8 and 16 bit | — |
+| [SGI](https://github.com/art-ix/PictureSharp.Formats.Extra/blob/main/docs/sgi.md) | 1–4 channels, 8 and 16 bit, RLE | 8 bit, RLE |
+| [Sun Raster](https://github.com/art-ix/PictureSharp.Formats.Extra/blob/main/docs/sun-raster.md) | 1–32 bit, RLE | — |
+| [XBM](https://github.com/art-ix/PictureSharp.Formats.Extra/blob/main/docs/xbm.md) | X10, X11 | X11 |
+| [XPM](https://github.com/art-ix/PictureSharp.Formats.Extra/blob/main/docs/xpm.md) | XPM3 | — |
+| [VTF](https://github.com/art-ix/PictureSharp.Formats.Extra/blob/main/docs/vtf.md) | 7.0–7.6, DXT and BC, Deflate; mips, frames, faces | — |
+| [ICNS](https://github.com/art-ix/PictureSharp.Formats.Extra/blob/main/docs/icns.md) | largest icon: PNG, RLE, ARGB, 1 bit | — |
+
+Requires .NET 10 and PictureSharp 0.7.6 or later.
 
 ```bash
 dotnet add package PictureSharp.Formats.Extra
 ```
+
+## Usage
 
 ```csharp
 using PictureSharp;
@@ -29,88 +33,27 @@ ImageConfiguration.Default = ImageConfiguration.Default.ToBuilder().AddExtraForm
 
 using var image = Image.Load("sprite.tga");
 image.SaveAsQoi("sprite.qoi");
-image.Save("sprite.ppm");             // the format comes from the extension
+image.Save("sprite.ppm");                 // the format comes from the extension
 ```
 
-Register a single format with `.AddFormat(new TgaFormat())`, or pass a configuration only to the calls that need it
-through `DecoderOptions.Configuration` and `EncoderOptions.Configuration`.
-
-## Decoder options
-
-DDS and VTF files hold several surfaces. Choose one with a record in `DecoderOptions.FormatOptions` (PictureSharp
-0.7.6); `Image.Identify` then reports its size. Other formats ignore these records, so one `DecoderOptions` can carry
-settings for several plugins.
+DDS and VTF files hold several images; choose one with a decoder options record:
 
 ```csharp
 using PictureSharp.Formats.Dds;
-using PictureSharp.Formats.Vtf;
 
-var options = new DecoderOptions
-{
-    FormatOptions = [new DdsDecoderOptions { MipLevel = 1, Layer = 2 }, new VtfDecoderOptions { Frame = 3 }],
-};
+var options = new DecoderOptions { FormatOptions = [new DdsDecoderOptions { MipLevel = 1, Layer = 2 }] };
 using var mip = Image.Load("texture.dds", options);
-using var frame = Image.Load("water.vtf", options);
 ```
 
-| Record | Property | Selects (default 0) |
-| --- | --- | --- |
-| `DdsDecoderOptions` | `MipLevel` | Mip level; 0 is the full size, each level halves both sides (at least 1) |
-| | `Layer` | Texture array element, cube face (+X, −X, +Y, −Y, +Z, −Z; element `n` of a cube array starts at `6 × n`; a DX9 cube map counts only its stored faces) or volume slice of the selected mip level |
-| `VtfDecoderOptions` | `MipLevel` | Mip level; 0 is the full size |
-| | `Frame` | Animation frame |
-| | `Face` | Environment map face: 0–5 (right, left, back, front, up, down), 6 for the sphere map of some 7.1–7.4 files |
-| | `Slice` | Volume slice; each mip level has half the slices of the previous one (at least 1) |
+## Documentation
 
-Negative values throw `ArgumentOutOfRangeException` when the record is created; an index the file does not store
-throws `ImageFormatException`. Without a record the decoders read the same surface as before.
+- [Getting started](https://github.com/art-ix/PictureSharp.Formats.Extra/blob/main/docs/README.md): registering all or some formats, shortcuts, common behaviour.
+- One page per format (linked in the table above): what is read and written, options, examples and exact behaviour.
+- [Decoder options](https://github.com/art-ix/PictureSharp.Formats.Extra/blob/main/docs/decoder-options.md): mip levels, layers and frames in DDS and VTF.
 
-## Behaviour
-
-- Pixels decode exactly as in Pillow 10.2.0. Netpbm samples above 8 bits are reduced to
-  round(value / maxval × 255) with ties to even, and 15-bit TGA colour to value × 255 / 31.
-- The QOI encoder follows `qoi.h` `qoi_encode` chunk for chunk. A linear QOI colour space maps to
-  `ImageMetadata.Gamma = 1` in both directions.
-- TGA has no signature, so detection checks the header fields. Alpha follows the bit depth (32-bit pixels, 16-bit
-  greyscale, 32-bit colour maps, and 16-bit colour only with a declared alpha bit). A TGA 2.0 extension area can
-  declare no alpha or premultiplied alpha.
-- DDS decodes one surface: by default mip level 0 of the first array element, cube face or volume slice
-  (`DdsDecoderOptions` selects another). BC1–BC5,
-  BC7 and the bit-mask layouts decode exactly as in Pillow 10.2.0 (signed BC4/BC5 are shifted by +128, as Pillow does).
-  BC6H follows the D3D11 spec, matching bcdec; half floats are clamped to [0, 1] and truncated after × 255. DXT2/DXT4
-  and the DX10 premultiplied alpha mode are unpremultiplied. Float, YUV, ASTC and ETC formats throw
-  `NotSupportedException`.
-- PSD and PSB decode only the merged image; layers, masks and effects are skipped. 16-bit samples are reduced to
-  round(value / 257); CMYK converts as Pillow 10.2.0 does, without the ICC profile; 1 bits of a bitmap are black.
-  The first extra channel is the transparency when the layer count is negative or the file has no layers (indexed and
-  bitmap images stay opaque), and RGB colours, which Photoshop composites over white, are then unblended exactly as
-  ImageMagick does; greyscale and CMYK colours are kept, as in ImageMagick. ICC, EXIF, XMP and the resolution are read
-  from the image resources. Lab, multichannel, 32-bit and ZIP-compressed image data throw `NotSupportedException`.
-- SGI 16-bit samples are reduced to round(value / 257), and two channels are grey and alpha. Colour-map SGI files
-  (dithered, screen, colour map) throw `NotSupportedException`.
-- Sun Raster RLE runs cover the row padding and may cross rows, as in the specification, ImageMagick and Netpbm
-  (Pillow 10.2.0 leaves the padding out). The first byte of a 32-bit pixel is padding, as in the specification and
-  Netpbm (Pillow takes the last byte, ImageMagick reads it as alpha). Type 3 stores RGB, every other type BGR, also
-  when byte-encoded (ImageMagick swaps those colours). A 1-bit image with a colour map indexes the map.
-- XBM set bits are black, as in X11 and ImageMagick (Pillow decodes them as white). The encoder writes a set bit for
-  pixels at least half opaque with a luma below 128, and can write a hotspot; the decoder skips the hotspot.
-- XPM colours take the `c` visual, then `g`, `g4` and `m`; hexadecimal colours with 1–4 digits per channel are scaled
-  to 8 bits with rounding and names come from X.Org's `rgb.txt` (X11 values, so `gray` is 190). `None` is transparent
-  black. HSV colours and unknown names throw `NotSupportedException`.
-- VTF decodes one surface: by default the largest mip level of the first frame, cube face and volume slice
-  (`VtfDecoderOptions` selects another); the thumbnail is skipped.
-  4-, 5- and 6-bit fields widen as value × 255 / max (truncating), 16-bit channels as round(value / 257). Bluescreen
-  formats make pure blue transparent, A8 is black with alpha, UV88 and UVLX8888 fill red and green (and blue). DXT and
-  BC blocks use the DDS decoders. Float formats, P8 and compression methods other than Deflate throw
-  `NotSupportedException`.
-- ICNS picks the largest icon in Pillow 10.2.0's order; within a size a PNG or ARGB element wins over an RGB element,
-  which takes its alpha from the matching 8-bit mask. PNG elements decode through the core PNG decoder and keep their
-  ICC, EXIF and XMP. JPEG 2000 elements are skipped (only JPEG 2000 icons → `NotSupportedException`), and 1-bit icons
-  are used only without colour icons. The 4- and 8-bit legacy icons are not read.
-- Encoders keep the first frame and write no ICC, EXIF or XMP blocks. PBM, PGM and PPM drop alpha.
-- Corrupt input throws `ImageFormatException`, valid input with unsupported features throws `NotSupportedException`,
-  and `DecoderOptions.MaxPixels` is checked before any pixels are allocated.
+Decoded pixels are checked against Pillow 10.2.0, ImageMagick or reference writers. Corrupt files throw
+`ImageFormatException`, unsupported features `NotSupportedException`.
 
 ## License
 
-MIT. Ported sources and their licenses are listed in [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt).
+MIT. Ported sources and their licenses are listed in [THIRD-PARTY-NOTICES.txt](https://github.com/art-ix/PictureSharp.Formats.Extra/blob/main/THIRD-PARTY-NOTICES.txt).

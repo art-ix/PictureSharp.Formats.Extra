@@ -155,7 +155,7 @@ Remaining for the DoD: a check of the rgb.txt notice text against the
 upstream `COPYING` (written from the standard X11 licence).
 
 Every version adds its `PictureSharp.Formats.<Format>` namespace to `ArchitectureTests` and updates the API snapshot,
-the README and `ExtraFormats.AddExtraFormats`.
+the README table, the format's page in `docs/` and `ExtraFormats.AddExtraFormats`.
 
 ## 0.5.0 — VTF, ICNS
 

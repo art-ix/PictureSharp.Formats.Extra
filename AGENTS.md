@@ -41,6 +41,7 @@ to the main type, give public enums separate files, keep hot loops allocation-fr
 | --- | --- |
 | `src/PictureSharp.Formats.Extra/` | Plugin: one folder per format plus `Common/` |
 | `tests/PictureSharp.Formats.Extra.Tests/` | TUnit tests |
+| `docs/` | User documentation: getting started, one page per format, decoder options |
 | `tests/assets/` | Corpus, `reference.json`, public API snapshot and generation scripts |
 | `reference/` | Uncommitted reference sources and tools |
 
@@ -66,6 +67,10 @@ dotnet test -c Release --treenode-filter "/*/*/*/*[Category=Oracle]"
 ```
 
 A public API change updates `tests/assets/PublicApi.approved.txt` from the `PublicApi.received.txt` the test writes.
+
+The README is packed into the NuGet package, so it stays short and links to `docs/` with absolute
+`https://github.com/art-ix/PictureSharp.Formats.Extra/blob/main/...` URLs. Format details, options and examples go
+to the format's page in `docs/`; code examples there must compile against the public API.
 
 ## Git and versioning
 
