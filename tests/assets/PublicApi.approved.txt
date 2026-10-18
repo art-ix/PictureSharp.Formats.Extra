@@ -35,6 +35,17 @@ PictureSharp.Formats.Dds.DdsPixelFormat
 PictureSharp.Formats.Extra.ExtraFormats
   PictureSharp.ImageConfigurationBuilder AddExtraFormats(PictureSharp.ImageConfigurationBuilder)
   System.Collections.Generic.IReadOnlyList`1[PictureSharp.Formats.IImageFormatModule] CreateModules()
+PictureSharp.Formats.Icns.IcnsFormat
+  Boolean IsSupported(System.ReadOnlySpan`1[System.Byte])
+  Int32 HeaderSize
+  Int32 get_HeaderSize()
+  PictureSharp.Formats.IImageFormatDecoder Decoder
+  PictureSharp.Formats.IImageFormatDecoder get_Decoder()
+  PictureSharp.ImageFormat Format
+  PictureSharp.ImageFormat get_Format()
+  Void .ctor()
+PictureSharp.Formats.Icns.IcnsImageExtensions
+  PictureSharp.ImageFormat get_Icns()
 PictureSharp.Formats.Pnm.PnmEncoderOptions
   Boolean Equals(PictureSharp.EncoderOptions)
   Boolean Equals(PictureSharp.Formats.Pnm.PnmEncoderOptions)

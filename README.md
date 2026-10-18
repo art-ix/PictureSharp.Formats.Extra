@@ -13,6 +13,8 @@
 | Sun Raster | `.ras` `.sun` | 1, 4, 8 bit with or without a colour map; 24, 32 bit; RLE | — |
 | XBM | `.xbm` | X10 and X11 | X11 |
 | XPM | `.xpm` | XPM3, up to 4 characters per pixel, hex colours, X11 colour names, `None` | — |
+| VTF | `.vtf` | versions 7.0–7.6; 8- and 16-bit layouts, DXT1/3/5, ATI1N/ATI2N, Strata Source BC4–BC7; Deflate (7.6) | — |
+| ICNS | `.icns` | largest icon: PNG, RLE RGB with 8-bit mask, ARGB, 1-bit with mask | — |
 
 ```bash
 dotnet add package PictureSharp.Formats.Extra
@@ -64,6 +66,15 @@ through `DecoderOptions.Configuration` and `EncoderOptions.Configuration`.
 - XPM colours take the `c` visual, then `g`, `g4` and `m`; hexadecimal colours with 1–4 digits per channel are scaled
   to 8 bits with rounding and names come from X.Org's `rgb.txt` (X11 values, so `gray` is 190). `None` is transparent
   black. HSV colours and unknown names throw `NotSupportedException`.
+- VTF decodes only the largest mip level of the first frame, cube face and volume slice; the thumbnail is skipped.
+  4-, 5- and 6-bit fields widen as value × 255 / max (truncating), 16-bit channels as round(value / 257). Bluescreen
+  formats make pure blue transparent, A8 is black with alpha, UV88 and UVLX8888 fill red and green (and blue). DXT and
+  BC blocks use the DDS decoders. Float formats, P8 and compression methods other than Deflate throw
+  `NotSupportedException`.
+- ICNS picks the largest icon in Pillow 10.2.0's order; within a size a PNG or ARGB element wins over an RGB element,
+  which takes its alpha from the matching 8-bit mask. PNG elements decode through the core PNG decoder and keep their
+  ICC, EXIF and XMP. JPEG 2000 elements are skipped (only JPEG 2000 icons → `NotSupportedException`), and 1-bit icons
+  are used only without colour icons. The 4- and 8-bit legacy icons are not read.
 - Encoders keep the first frame and write no ICC, EXIF or XMP blocks. PBM, PGM and PPM drop alpha.
 - Corrupt input throws `ImageFormatException`, valid input with unsupported features throws `NotSupportedException`,
   and `DecoderOptions.MaxPixels` is checked before any pixels are allocated.

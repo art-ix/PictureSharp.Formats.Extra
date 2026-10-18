@@ -245,6 +245,36 @@
   "sha256": "cec62b56ce1706fc38c68615ef77d15cfc49476368f494cced18c0434d8f28ab",
   "width": 37
  },
+ "icns/pil.icns": {
+  "height": 1024,
+  "oracle": "pillow",
+  "sha256": "3bc44c6ad16b2179213d03c5fbf3cf92c378068e853fd8bc06af80aa9ec042c9",
+  "width": 1024
+ },
+ "icns/png-over-rgb.icns": {
+  "height": 32,
+  "oracle": "pillow",
+  "sha256": "b1058558f621db7edaafb130170827bc51e93cb618d793ec1c1f87183d3f77ed",
+  "width": 32
+ },
+ "icns/rgb-all-sizes.icns": {
+  "height": 128,
+  "oracle": "pillow",
+  "sha256": "e14d45b9494bed7187d18917d6a9a5696225fd367cd151e3f2dab70739d05a5a",
+  "width": 128
+ },
+ "icns/rgb32-raw.icns": {
+  "height": 32,
+  "oracle": "pillow",
+  "sha256": "492c47b9580ad4119ba54a5f8f3ad06f760a0c5905215111a7f17a9e91edc604",
+  "width": 32
+ },
+ "icns/rgb48-toc.icns": {
+  "height": 48,
+  "oracle": "pillow",
+  "sha256": "717e869b45ecd63e6024a88b2bc8cbb48b7fbea2f01ce6df19dc8159d08bcca4",
+  "width": 48
+ },
  "pnm/bitmap-plain.pbm": {
   "height": 23,
   "oracle": "pillow",
@@ -909,6 +939,168 @@
   "height": 23,
   "oracle": "pillow",
   "sha256": "6827c4942eea46fff7cb0d433227fb8799c20ae3ff270302bc9bb592742ab681",
+  "width": 37
+ },
+ "vtf/a8.vtf": {
+  "height": 23,
+  "oracle": "python",
+  "sha256": "dc913d34c9d85d902433ec2055cb963e23a2af42770c0704cf4917554e556ecb",
+  "width": 37
+ },
+ "vtf/abgr8888.vtf": {
+  "height": 23,
+  "oracle": "python",
+  "sha256": "6827c4942eea46fff7cb0d433227fb8799c20ae3ff270302bc9bb592742ab681",
+  "width": 37
+ },
+ "vtf/argb8888.vtf": {
+  "height": 23,
+  "oracle": "python",
+  "sha256": "6827c4942eea46fff7cb0d433227fb8799c20ae3ff270302bc9bb592742ab681",
+  "width": 37
+ },
+ "vtf/bgr888.vtf": {
+  "height": 23,
+  "oracle": "python",
+  "sha256": "cec62b56ce1706fc38c68615ef77d15cfc49476368f494cced18c0434d8f28ab",
+  "width": 37
+ },
+ "vtf/bgra-crc-resource.vtf": {
+  "height": 23,
+  "oracle": "python",
+  "sha256": "6827c4942eea46fff7cb0d433227fb8799c20ae3ff270302bc9bb592742ab681",
+  "width": 37
+ },
+ "vtf/bgra-cubemap.vtf": {
+  "height": 16,
+  "oracle": "python",
+  "sha256": "5eb22afb0c366470c3d068340c7bdf4159afbbd4264466897e7ade2b96728255",
+  "width": 16
+ },
+ "vtf/bgra-cubemap7-v72.vtf": {
+  "height": 16,
+  "oracle": "python",
+  "sha256": "5eb22afb0c366470c3d068340c7bdf4159afbbd4264466897e7ade2b96728255",
+  "width": 16
+ },
+ "vtf/bgra-frames.vtf": {
+  "height": 23,
+  "oracle": "python",
+  "sha256": "6827c4942eea46fff7cb0d433227fb8799c20ae3ff270302bc9bb592742ab681",
+  "width": 37
+ },
+ "vtf/bgra-mips-v70.vtf": {
+  "height": 23,
+  "oracle": "python",
+  "sha256": "6827c4942eea46fff7cb0d433227fb8799c20ae3ff270302bc9bb592742ab681",
+  "width": 37
+ },
+ "vtf/bgra-mips-v71.vtf": {
+  "height": 23,
+  "oracle": "python",
+  "sha256": "6827c4942eea46fff7cb0d433227fb8799c20ae3ff270302bc9bb592742ab681",
+  "width": 37
+ },
+ "vtf/bgra-mips-v72.vtf": {
+  "height": 23,
+  "oracle": "python",
+  "sha256": "6827c4942eea46fff7cb0d433227fb8799c20ae3ff270302bc9bb592742ab681",
+  "width": 37
+ },
+ "vtf/bgra-mips-v73.vtf": {
+  "height": 23,
+  "oracle": "python",
+  "sha256": "6827c4942eea46fff7cb0d433227fb8799c20ae3ff270302bc9bb592742ab681",
+  "width": 37
+ },
+ "vtf/bgra-mips-v74.vtf": {
+  "height": 23,
+  "oracle": "python",
+  "sha256": "6827c4942eea46fff7cb0d433227fb8799c20ae3ff270302bc9bb592742ab681",
+  "width": 37
+ },
+ "vtf/bgra-mips-v75.vtf": {
+  "height": 23,
+  "oracle": "python",
+  "sha256": "6827c4942eea46fff7cb0d433227fb8799c20ae3ff270302bc9bb592742ab681",
+  "width": 37
+ },
+ "vtf/bgra-volume.vtf": {
+  "height": 16,
+  "oracle": "python",
+  "sha256": "5eb22afb0c366470c3d068340c7bdf4159afbbd4264466897e7ade2b96728255",
+  "width": 16
+ },
+ "vtf/bgra8888.vtf": {
+  "height": 23,
+  "oracle": "python",
+  "sha256": "6827c4942eea46fff7cb0d433227fb8799c20ae3ff270302bc9bb592742ab681",
+  "width": 37
+ },
+ "vtf/bgrx8888.vtf": {
+  "height": 23,
+  "oracle": "python",
+  "sha256": "cec62b56ce1706fc38c68615ef77d15cfc49476368f494cced18c0434d8f28ab",
+  "width": 37
+ },
+ "vtf/dxt1-onebitalpha.vtf": {
+  "height": 23,
+  "oracle": "pillow-dds",
+  "sha256": "fe39e552aa6a798b13aa0b79e5e6cdedd25bbf716453fff5e3d57d3e7e5564a9",
+  "width": 37
+ },
+ "vtf/dxt1.vtf": {
+  "height": 23,
+  "oracle": "pillow-dds",
+  "sha256": "04504489c401f84543a0ed64b1a39fad0d9267c5c43264f05d9035ac064b15e7",
+  "width": 37
+ },
+ "vtf/dxt3.vtf": {
+  "height": 23,
+  "oracle": "pillow-dds",
+  "sha256": "705485973a8c1bf2ef6d8fe5e7924ddcb7d58bbfea335e27ae6a56f54e3ab20c",
+  "width": 37
+ },
+ "vtf/dxt5.vtf": {
+  "height": 23,
+  "oracle": "pillow-dds",
+  "sha256": "67d671eb919ae11c0cfefd36593b3447d0e5ce73b70fd4ced66f7b6f757bf341",
+  "width": 37
+ },
+ "vtf/i8.vtf": {
+  "height": 23,
+  "oracle": "python",
+  "sha256": "ffc4a471ddc338108968429ece59a5ea6ada1e335d94c5f8473cc0fe32b24219",
+  "width": 37
+ },
+ "vtf/ia88.vtf": {
+  "height": 23,
+  "oracle": "python",
+  "sha256": "5f33430c34e88d7ae917235f34d45c3e95226b626f1ddc5873b6f0beec5f14c2",
+  "width": 37
+ },
+ "vtf/one-pixel.vtf": {
+  "height": 1,
+  "oracle": "python",
+  "sha256": "5f53c0ff07ba5d9a330e68c95dabb1a9bc49e29f9ed53f6fa7c6d99abb000050",
+  "width": 1
+ },
+ "vtf/rgb888.vtf": {
+  "height": 23,
+  "oracle": "python",
+  "sha256": "cec62b56ce1706fc38c68615ef77d15cfc49476368f494cced18c0434d8f28ab",
+  "width": 37
+ },
+ "vtf/rgba8888.vtf": {
+  "height": 23,
+  "oracle": "python",
+  "sha256": "6827c4942eea46fff7cb0d433227fb8799c20ae3ff270302bc9bb592742ab681",
+  "width": 37
+ },
+ "vtf/uv88.vtf": {
+  "height": 23,
+  "oracle": "python",
+  "sha256": "67ea6c9e5200cb12987147023ae0cb432f59ac5acc33cedf716a4c78d3b88c25",
   "width": 37
  },
  "xbm/hotspot-crlf.xbm": {

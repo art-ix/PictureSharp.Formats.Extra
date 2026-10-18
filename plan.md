@@ -18,7 +18,7 @@ every platform). The core will drop this rule in the future.
 | 0.2.0 | DDS: DX9/DX10, uncompressed, BC1–BC5, BC7, BC6H; BGRA8/BGRX8 writing | Done (268087c); released as part of v0.3.0 |
 | 0.3.0 | PSD/PSB (merged image, read only) | Done (f62011b); first GitHub release v0.3.0, not yet on NuGet |
 | 0.4.0 | SGI (read and write), Sun Raster (read), XBM (read and write), XPM (read) | Done (525fb10); VERSION 0.4.0, not released |
-| 0.5.0 | VTF (read), ICNS (read) | In progress: VTF decoder written (not yet in the corpus), ICNS not started |
+| 0.5.0 | VTF (read), ICNS (read) | Done (not committed) |
 
 0.1.0 and 0.2.0 were never released on their own: the first release, v0.3.0, contains all three versions.
 
@@ -157,13 +157,13 @@ the README and `ExtraFormats.AddExtraFormats`.
 
 ## 0.5.0 — VTF, ICNS
 
-- VTF (Valve Texture Format, `.vtf`), read only: signature `VTF\0`, versions 7.0–7.5 (7.3+ with the resource
-  directory). Only the largest mip level of the first frame, face and slice; the low-resolution thumbnail is skipped.
+- VTF (Valve Texture Format, `.vtf`), read only: signature `VTF\0`, versions 7.0–7.6 (7.3+ with the resource
+  directory, 7.6 with Deflate-compressed mip levels from the `AXC` resource; other methods → `NotSupportedException`). Only the largest mip level of the first frame, face and slice; the low-resolution thumbnail is skipped.
   Image formats: RGBA8888, ABGR8888, ARGB8888, BGRA8888, BGRX8888, RGB888, BGR888 (and the bluescreen variants as
   opaque colours), RGB565, BGR565, BGRA4444, BGRA5551, BGRX5551, I8, IA88, A8, UV88, UVWQ8888, UVLX8888, RGBA16161616
-  (→ 8 bit with the documented rounding), DXT1, DXT1_ONEBITALPHA, DXT3, DXT5 (the existing BC decoders from
-  `Common/BlockCompression`). Float formats (RGBA16161616F, R32F, RGB323232F, RGBA32323232F), P8 and ATI formats →
-  `NotSupportedException`.
+  (→ 8 bit with the documented rounding), DXT1, DXT1_ONEBITALPHA, DXT3, DXT5, ATI1N, ATI2N and the Strata Source BC4, BC5, BC6H and BC7
+  formats (the existing BC decoders from `Common/BlockCompression`). Float formats (RGBA16161616F, R32F, RGB323232F,
+  RGBA32323232F) and P8 → `NotSupportedException`.
 - ICNS (Apple Icon Image, `.icns`), read only: decodes the largest element. PNG elements (`ic07`–`ic14`, `icp4`–`icp6`,
   `ic04`/`ic05` when PNG) through the core PNG decoder via the public API; RGB elements with PackBits-like RLE
   (`is32`, `il32`, `ih32`, `it32` with its 4-byte prefix) combined with the 8-bit masks (`s8mk`, `l8mk`, `h8mk`,
@@ -174,6 +174,17 @@ the README and `ExtraFormats.AddExtraFormats`.
   Pillow or ImageMagick, so the corpus comes from an own writer whose blocks and raw layouts are checked against the
   same data decoded from DDS by Pillow; real VTF files (VTFEdit, Source SDK) only as an external corpus with the user's
   approval.
+
+Done:
+- VTF: `Vtf/` with the header for every version (pre-7.3 thumbnail skip, resource directory with inline resources,
+  seventh sphere-map face in 7.1–7.4, volume slices, frames) and the 7.6 `AXC` resource (Deflate through `ZLibStream`).
+  27-file corpus from the own writer in `generate_corpus.py`; references from `make_reference.py` (numpy for raw
+  layouts, Pillow's DDS decoder for the DXT blocks). Packed 16-bit formats, bluescreen, 16-bit channels, 7.6 and the
+  error paths are covered by unit tests.
+- ICNS: `Icns/` ranks sizes as Pillow does; PNG through `ImageDecodeContext.DecodeEmbedded`, RLE and raw RGB with
+  masks, `it32` prefix, ARGB, `ich#`/`ICN#`/`ics#` fallback, JPEG 2000 skipped. 5-file corpus checked against
+  Pillow 10.2.0 (Pillow-written PNG icons, RGB elements of every size, a TOC, PNG over RGB).
+- Tests: 1172/1172 (including Slow and Oracle); the corpus and `reference.json` regenerate byte for byte.
 
 ## Requests to the core
 

@@ -12,7 +12,7 @@ public sealed class ArchitectureTests
 
     private static readonly string[] PublicNamespaces =
         [
-            "PictureSharp.Formats.Dds", "PictureSharp.Formats.Extra", "PictureSharp.Formats.Pnm", "PictureSharp.Formats.Psd", "PictureSharp.Formats.Qoi",
+            "PictureSharp.Formats.Dds", "PictureSharp.Formats.Extra", "PictureSharp.Formats.Icns", "PictureSharp.Formats.Pnm", "PictureSharp.Formats.Psd", "PictureSharp.Formats.Qoi",
             "PictureSharp.Formats.Sgi", "PictureSharp.Formats.SunRaster", "PictureSharp.Formats.Tga", "PictureSharp.Formats.Vtf", "PictureSharp.Formats.Xbm", "PictureSharp.Formats.Xpm",
         ];
 

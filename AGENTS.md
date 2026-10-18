@@ -1,7 +1,7 @@
 # Working on PictureSharp.Formats.Extra
 
 PictureSharp.Formats.Extra is a format plugin for [PictureSharp](https://github.com/art-ix/PictureSharp) that adds QOI,
-Netpbm, TGA, DDS, PSD/PSB, SGI, Sun Raster, XBM and XPM (and later VTF and ICNS) entirely in C#. It is a separate repository and package with its own
+Netpbm, TGA, DDS, PSD/PSB, SGI, Sun Raster, XBM, XPM, VTF and ICNS entirely in C#. It is a separate repository and package with its own
 version; it uses PictureSharp only through its public NuGet API.
 
 Before starting, read [plan.md](plan.md) to identify the current version and its definition of done (DoD), then read

@@ -204,6 +204,53 @@ def sun(file):
         return size, data, oracle + "-expanded"
 
 
+# VTF raw layouts -> (bytes per pixel, function from an (n, bpp) uint8 array to RGBA).
+VTF_RAW = {
+    0: (4, lambda p: p),
+    1: (4, lambda p: p[:, ::-1]),
+    2: (3, lambda p: np.c_[p, np.full(len(p), 255)]),
+    3: (3, lambda p: np.c_[p[:, ::-1], np.full(len(p), 255)]),
+    5: (1, lambda p: np.c_[p, p, p, np.full(len(p), 255)]),
+    6: (2, lambda p: np.c_[p[:, 0], p[:, 0], p[:, 0], p[:, 1]]),
+    8: (1, lambda p: np.c_[np.zeros((len(p), 3), int), p]),
+    11: (4, lambda p: p[:, [3, 0, 1, 2]]),
+    12: (4, lambda p: p[:, [2, 1, 0, 3]]),
+    16: (4, lambda p: np.c_[p[:, [2, 1, 0]], np.full(len(p), 255)]),
+    22: (2, lambda p: np.c_[p, np.zeros(len(p), int), np.full(len(p), 255)]),
+}
+VTF_DXT = {13: (b"DXT1", 8), 20: (b"DXT1", 8), 14: (b"DXT3", 16), 15: (b"DXT5", 16)}
+
+
+def vtf(file):
+    """A Python reading of the VTF layout: raw formats through numpy, DXT through Pillow's DDS decoder."""
+    d = open(file, "rb").read()
+    minor, header_size = struct.unpack_from("<II", d, 8)[0], struct.unpack_from("<I", d, 12)[0]
+    w, h, flags, frames = struct.unpack_from("<HHIH", d, 16)
+    fmt, mips, _, tw, th = struct.unpack_from("<iBiBB", d, 52)
+    depth = max(1, struct.unpack_from("<H", d, 63)[0]) if minor >= 2 else 1
+    size = lambda mw, mh: (((mw + 3) // 4) * ((mh + 3) // 4) * VTF_DXT[fmt][1]) if fmt in VTF_DXT else mw * mh * VTF_RAW[fmt][0]
+    if minor < 3:
+        start = header_size + (((tw + 3) // 4) * ((th + 3) // 4) * 8 if tw and th else 0)
+    else:
+        n = struct.unpack_from("<I", d, 68)[0]
+        start = [struct.unpack_from("<I", d, 84 + 8 * i)[0] for i in range(n) if d[80 + 8 * i:84 + 8 * i] == b"\x30\0\0\0"][0]
+    level = lambda m, faces: size(max(1, w >> m), max(1, h >> m)) * frames * faces * max(1, depth >> m)
+    faces = 1
+    if flags & 0x4000:
+        six = sum(level(m, 6) for m in range(mips))
+        faces = 7 if 1 <= minor <= 4 and len(d) - start > six else 6
+    offset = start + sum(level(m, faces) for m in range(1, mips))
+    surface = d[offset:offset + size(w, h)]
+    if fmt in VTF_DXT:
+        dds = b"DDS " + struct.pack("<7I", 124, 0x1007, h, w, 0, 0, 0) + b"\0" * 44
+        dds += struct.pack("<2I", 32, 4) + VTF_DXT[fmt][0] + b"\0" * 20 + struct.pack("<I", 0x1000) + b"\0" * 16
+        with Image.open(io.BytesIO(dds + surface)) as im:
+            return im.size, np.asarray(im.convert("RGBA")).tobytes(), "pillow-dds"
+    bpp, convert = VTF_RAW[fmt]
+    pixels = convert(np.frombuffer(surface, np.uint8).reshape(-1, bpp).astype(int))
+    return (w, h), pixels.astype(np.uint8).tobytes(), "python"
+
+
 def rgba(file):
     lower = file.lower()
     if lower.endswith((".psd", ".psb")):
@@ -217,6 +264,10 @@ def rgba(file):
         return consensus(file, invert=True)
     if lower.endswith(".xpm"):
         return consensus(file)
+    if lower.endswith(".vtf"):
+        return vtf(file)
+    if lower.endswith(".icns"):
+        return pillow_rgba(file)
     special = via_bcdec(file)
     if special:
         return special

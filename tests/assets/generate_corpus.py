@@ -11,6 +11,7 @@ The QOI writer is a line-by-line port of qoi.h qoi_encode, so its files also che
 Run with:  python3 -I tests/assets/generate_corpus.py
 Then:      python3 -I tests/assets/make_reference.py
 """
+import io
 import os
 import shutil
 import struct
@@ -781,6 +782,154 @@ def xpm(s):
     write("one-pixel.xpm", '/* XPM */\nstatic char *o[] = {"1 1 1 1", "a c #102030", "a"};\n')
 
 
+# --------------------------------------------------------------------------- VTF
+
+VTF_FORMATS = {  # name -> (id, encoder of an RGBA uint8 array to bytes)
+    "rgba8888": (0, lambda a: a.tobytes()),
+    "abgr8888": (1, lambda a: a[..., ::-1].tobytes()),
+    "rgb888": (2, lambda a: a[..., :3].tobytes()),
+    "bgr888": (3, lambda a: a[..., 2::-1].tobytes()),
+    "i8": (5, lambda a: a[..., 0].tobytes()),
+    "ia88": (6, lambda a: a[..., [0, 3]].tobytes()),
+    "a8": (8, lambda a: a[..., 3].tobytes()),
+    "argb8888": (11, lambda a: a[..., [1, 2, 3, 0]].tobytes()),   # stored G, B, A, R
+    "bgra8888": (12, lambda a: a[..., [2, 1, 0, 3]].tobytes()),
+    "bgrx8888": (16, lambda a: np.dstack([a[..., 2::-1], np.full(a.shape[:2], 7, np.uint8)]).tobytes()),
+    "uv88": (22, lambda a: a[..., :2].tobytes()),
+}
+
+
+def vtf_custom(name, w, h, fmt, mips, minor=5, frames=1, flags=0, thumb=True, depth=1, extra_resources=b""):
+    """mips: list of surfaces (bytes) from the largest level down; each holds frames x faces x slices surfaces."""
+    thumb_data = bytes(range(8)) * 16 if thumb else b""    # a 16x16 DXT1 thumbnail: 16 arbitrary blocks
+    count = len(mips)
+    body = b"".join(reversed(mips))
+    head = b"VTF\0" + struct.pack("<II", 7, minor)
+    fields = struct.pack("<HHIHH4x3f4xfiBiBB", w, h, flags, frames, 0, 0.5, 0.5, 0.5, 1.0, fmt, count, 13 if thumb else -1,
+                         16 if thumb else 0, 16 if thumb else 0)
+    if minor >= 2:
+        fields += struct.pack("<H", depth)
+    if minor < 3:
+        size = 64 if minor < 2 else 80
+        header = head + struct.pack("<I", size) + fields
+        header += b"\0" * (size - len(header))
+        data = header + thumb_data + body
+    else:
+        resources = [(b"\x01\0\0", 0)] if thumb else []
+        resources.append((b"\x30\0\0", 0))
+        n = len(resources) + (1 if extra_resources else 0)
+        size = 80 + 8 * n
+        offset = size
+        table = b""
+        if thumb:
+            table += b"\x01\0\0\0" + struct.pack("<I", offset)
+            offset += len(thumb_data)
+        if extra_resources:
+            # A CRC resource with its value inline (flag 2) must be skipped.
+            table += b"CRC\x02" + extra_resources
+        table += b"\x30\0\0\0" + struct.pack("<I", offset)
+        header = head + struct.pack("<I", size) + fields + b"\0" * 3 + struct.pack("<I", n) + b"\0" * 8 + table
+        data = header + thumb_data + body
+    open(path("vtf", name), "wb").write(data)
+
+
+def vtf_mips(img, encode, levels, items=1):
+    """Every level holds `items` surfaces (frames or faces); all but the first are inverted, so a wrong offset shows."""
+    out = []
+    for level in range(levels):
+        w, h = max(1, img.width >> level), max(1, img.height >> level)
+        a = np.asarray(img.resize((w, h), Image.Resampling.NEAREST).convert("RGBA"))
+        out.append(encode(a) + encode(255 - a) * (items - 1))
+    return out
+
+
+def vtf(s):
+    rgba = Image.fromarray(s["rgba"], "RGBA")
+    for name, (fid, enc) in VTF_FORMATS.items():
+        vtf_custom(f"{name}.vtf", rgba.width, rgba.height, fid, vtf_mips(rgba, enc, 1), thumb=False)
+    # Mip chains, every version layout, thumbnails and resources.
+    enc = VTF_FORMATS["bgra8888"][1]
+    for minor in (0, 1, 2, 3, 4, 5):
+        vtf_custom(f"bgra-mips-v7{minor}.vtf", rgba.width, rgba.height, 12, vtf_mips(rgba, enc, 6), minor=minor)
+    vtf_custom("bgra-crc-resource.vtf", rgba.width, rgba.height, 12, vtf_mips(rgba, enc, 3), minor=5, extra_resources=b"\x78\x56\x34\x12")
+    # Three animation frames: the first frame of the largest level is decoded.
+    vtf_custom("bgra-frames.vtf", rgba.width, rgba.height, 12, vtf_mips(rgba, enc, 4, items=3), frames=3)
+    # A cube map (six faces) and, in 7.2, a cube map with the seventh sphere-map face.
+    vtf_custom("bgra-cubemap.vtf", 16, 16, 12, vtf_mips(rgba.resize((16, 16)), enc, 5, items=6), flags=0x4000)
+    vtf_custom("bgra-cubemap7-v72.vtf", 16, 16, 12, vtf_mips(rgba.resize((16, 16)), enc, 5, items=7), minor=2, flags=0x4000)
+    # A volume texture: slices halve with each level.
+    vol = rgba.resize((16, 16))
+    vmips = [enc(np.asarray(vol.resize((max(1, 16 >> l),) * 2, Image.Resampling.NEAREST))) * max(1, 4 >> l) for l in range(5)]
+    vtf_custom("bgra-volume.vtf", 16, 16, 12, vmips, minor=3, depth=4)
+    # DXT blocks: the same random blocks as the DDS corpus; checked against Pillow through DDS.
+    rng = np.random.default_rng(23)
+    w, h = 37, 23
+    blocks = ((w + 3) // 4) * ((h + 3) // 4)
+    for name, fid, size in [("dxt1", 13, 8), ("dxt1-onebitalpha", 20, 8), ("dxt3", 14, 16), ("dxt5", 15, 16)]:
+        vtf_custom(f"{name}.vtf", w, h, fid, [rng.integers(0, 256, blocks * size, dtype=np.uint8).tobytes()], thumb=False)
+    vtf_custom("one-pixel.vtf", 1, 1, 0, [bytes([10, 20, 30, 40])], thumb=False)
+
+
+# --------------------------------------------------------------------------- ICNS
+
+def icns_rle(plane):
+    """Apple's PackBits variant: 0x80 + n - 3 repeats the next byte n (3-130) times, n - 1 starts n (1-128) literals."""
+    out, i, data = bytearray(), 0, bytes(plane)
+    while i < len(data):
+        run = 1
+        while i + run < len(data) and run < 130 and data[i + run] == data[i]:
+            run += 1
+        if run >= 3:
+            out += bytes([0x80 + run - 3, data[i]])
+            i += run
+            continue
+        j = i
+        while j < len(data) and j - i < 128 and not (j + 2 < len(data) and data[j] == data[j + 1] == data[j + 2]):
+            j += 1
+        out += bytes([j - i - 1]) + data[i:j]
+        i = j
+    return bytes(out)
+
+
+def icns_file(name, elements):
+    body = b"".join(t + struct.pack(">I", len(d) + 8) + d for t, d in elements)
+    open(path("icns", name), "wb").write(b"icns" + struct.pack(">I", len(body) + 8) + body)
+
+
+def icns(s):
+    rgba = Image.fromarray(s["rgba"], "RGBA")
+    flat = Image.fromarray(np.dstack([s["flat"], np.full(s["flat"].shape[:2], 255, np.uint8)]), "RGBA")
+
+    def square(img, n):
+        return np.asarray(img.resize((n, n), Image.Resampling.NEAREST))
+
+    def rgb_element(img, n, prefix=b""):
+        a = square(img, n)
+        return prefix + b"".join(icns_rle(a[..., c].tobytes()) for c in range(3))
+
+    def mask(img, n):
+        return square(img, n)[..., 3].tobytes()
+
+    # Pillow writes PNG elements for every size.
+    # A flat image keeps the 1024-pixel PNG small.
+    Image.fromarray(square(flat, 64)).save(path("icns", "pil.icns"))
+    # RGB elements with their masks; Pillow chooses the 128-pixel one (it32 with its zero prefix).
+    icns_file("rgb-all-sizes.icns", [
+        (b"is32", rgb_element(rgba, 16)), (b"s8mk", mask(rgba, 16)),
+        (b"il32", rgb_element(flat, 32)), (b"l8mk", mask(flat, 32)),
+        (b"ih32", rgb_element(rgba, 48)), (b"h8mk", mask(rgba, 48)),
+        (b"it32", rgb_element(rgba, 128, b"\0\0\0\0")), (b"t8mk", mask(rgba, 128)),
+    ])
+    icns_file("rgb48-toc.icns", [(b"TOC ", b"is32\0\0\0\x08"), (b"is32", rgb_element(flat, 16)), (b"ih32", rgb_element(rgba, 48)),
+                                 (b"h8mk", mask(rgba, 48)), (b"icnV", struct.pack(">f", 1.0))])
+    # Uncompressed interleaved RGB (exactly 32 x 32 x 3 bytes) without a mask.
+    icns_file("rgb32-raw.icns", [(b"il32", square(rgba, 32)[..., :3].tobytes())])
+    # A PNG element wins over the RGB element of the same size.
+    buf = io.BytesIO()
+    Image.fromarray(square(flat, 32)).save(buf, "PNG")
+    icns_file("png-over-rgb.icns", [(b"il32", rgb_element(rgba, 32)), (b"icp5", buf.getvalue())])
+
+
 def main():
     shutil.rmtree(CORPUS, ignore_errors=True)
     os.makedirs(SRC)
@@ -794,6 +943,8 @@ def main():
     sun(s)
     xbm(s)
     xpm(s)
+    vtf(s)
+    icns(s)
     shutil.rmtree(SRC)
 
 
