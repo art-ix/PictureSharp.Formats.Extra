@@ -154,8 +154,96 @@ public sealed class DdsTests
         await Assert.That(format.IsSupported("\x89PNG\r\n\x1a\n"u8)).IsFalse();
     }
 
+    [Test]
+    public async Task MipLevel_SelectsLevelOfTheChain()
+    {
+        // L8 4x4 with levels 4x4, 2x2 and 1x1 holding 10, 20 and 30.
+        byte[] file = Dds(4, 4, [.. Fill(16, 10), .. Fill(4, 20), 30], flags: 0x20000, bitCount: 8, mips: 3);
+        using Image level1 = TestSupport.Load(file, Select(new DdsDecoderOptions { MipLevel = 1 }));
+        using Image level2 = TestSupport.Load(file, Select(new DdsDecoderOptions { MipLevel = 2 }));
+        await Assert.That(TestSupport.Pixels(level1)).IsEquivalentTo(Enumerable.Repeat(new Rgba32(20, 20, 20), 4), CollectionOrdering.Matching);
+        await Assert.That(level2.GetPixelSpan()[0]).IsEqualTo(new Rgba32(30, 30, 30));
+        ImageInfo info = Image.Identify(file, Select(new DdsDecoderOptions { MipLevel = 1 }));
+        await Assert.That((info.Width, info.Height)).IsEqualTo((2, 2));
+        await Assert.That(() => TestSupport.Load(file, Select(new DdsDecoderOptions { MipLevel = 3 }))).Throws<ImageFormatException>();
+        await Assert.That(() => Image.Identify(file, Select(new DdsDecoderOptions { Layer = 1 }))).Throws<ImageFormatException>();
+    }
+
+    [Test]
+    public async Task Layer_SelectsArrayElementWithItsChain()
+    {
+        // DX10 R8_UNORM array of two 2x2 elements with two levels: element 0 = 1, 2; element 1 = 3, 4.
+        byte[] file = Dds(2, 2, [.. Fill(4, 1), 2, .. Fill(4, 3), 4], dxgi: 61, mips: 2, arraySize: 2);
+        using Image element1 = TestSupport.Load(file, Select(new DdsDecoderOptions { Layer = 1 }));
+        using Image element1Mip = TestSupport.Load(file, Select(new DdsDecoderOptions { Layer = 1, MipLevel = 1 }));
+        await Assert.That(element1.GetPixelSpan()[3]).IsEqualTo(new Rgba32(3, 0, 0));
+        await Assert.That(element1Mip.GetPixelSpan()[0]).IsEqualTo(new Rgba32(4, 0, 0));
+        await Assert.That(() => TestSupport.Load(file, Select(new DdsDecoderOptions { Layer = 2 }))).Throws<ImageFormatException>();
+    }
+
+    [Test]
+    public async Task Layer_CountsStoredCubeFacesAndDx10Cubes()
+    {
+        // DX9 cube map storing only +X and +Y: layer 1 is +Y.
+        byte[] partial = Dds(1, 1, [7, 8], flags: 0x20000, bitCount: 8, caps2: 0x200 | 0x400 | 0x1000);
+        using Image face = TestSupport.Load(partial, Select(new DdsDecoderOptions { Layer = 1 }));
+        await Assert.That(face.GetPixelSpan()[0]).IsEqualTo(new Rgba32(8, 8, 8));
+        await Assert.That(() => TestSupport.Load(partial, Select(new DdsDecoderOptions { Layer = 2 }))).Throws<ImageFormatException>();
+
+        // DX10 cube array of two elements: twelve faces.
+        byte[] cubes = Dds(1, 1, [.. Enumerable.Range(0, 12).Select(i => (byte)i)], dxgi: 61, arraySize: 2, miscFlag: 0x4);
+        using Image last = TestSupport.Load(cubes, Select(new DdsDecoderOptions { Layer = 11 }));
+        await Assert.That(last.GetPixelSpan()[0]).IsEqualTo(new Rgba32(11, 0, 0));
+    }
+
+    [Test]
+    public async Task Layer_SelectsVolumeSliceOfTheLevel()
+    {
+        // DX9 volume 2x2x4 with two levels: four 2x2 slices (1–4), then two 1x1 slices (5, 6).
+        byte[] file = Dds(2, 2, [.. Fill(4, 1), .. Fill(4, 2), .. Fill(4, 3), .. Fill(4, 4), 5, 6],
+            flags: 0x20000, bitCount: 8, mips: 2, depth: 4, caps2: 0x200000);
+        using Image slice2 = TestSupport.Load(file, Select(new DdsDecoderOptions { Layer = 2 }));
+        using Image smallSlice1 = TestSupport.Load(file, Select(new DdsDecoderOptions { MipLevel = 1, Layer = 1 }));
+        await Assert.That(slice2.GetPixelSpan()[0]).IsEqualTo(new Rgba32(3, 3, 3));
+        await Assert.That(smallSlice1.GetPixelSpan()[0]).IsEqualTo(new Rgba32(6, 6, 6));
+        await Assert.That(() => TestSupport.Load(file, Select(new DdsDecoderOptions { MipLevel = 1, Layer = 2 }))).Throws<ImageFormatException>();
+    }
+
+    [Test]
+    public async Task MipLevel_OfBlockCompressedPalettedAndTruncatedFiles()
+    {
+        // BC1 8x8: level 0 is four blocks, level 1 one red block.
+        byte[] red = [0x00, 0xf8, 0, 0, 0, 0, 0, 0];
+        byte[] bc1 = Dds(8, 8, [.. new byte[32], .. red], fourCC: "DXT1", mips: 2);
+        using Image mip = TestSupport.Load(bc1, Select(new DdsDecoderOptions { MipLevel = 1 }));
+        await Assert.That(mip.GetPixelSpan()[15]).IsEqualTo(new Rgba32(255, 0, 0));
+
+        // The palette precedes every surface.
+        byte[] palette = new byte[1024];
+        palette[4 * 9 + 1] = 200;
+        palette[4 * 9 + 3] = 255;
+        byte[] paletted = Dds(2, 1, [.. palette, 0, 0, 9], flags: 0x20, bitCount: 8, mips: 2);
+        using Image small = TestSupport.Load(paletted, Select(new DdsDecoderOptions { MipLevel = 1 }));
+        await Assert.That(small.GetPixelSpan()[0]).IsEqualTo(new Rgba32(0, 200, 0));
+
+        await Assert.That(() => TestSupport.Load(bc1[..^1], Select(new DdsDecoderOptions { MipLevel = 1 }))).Throws<ImageFormatException>();
+        await Assert.That(() => TestSupport.Load(bc1[..150], Select(new DdsDecoderOptions { MipLevel = 1 }))).Throws<ImageFormatException>();
+    }
+
+    [Test]
+    public async Task DecoderOptions_RejectNegativeIndices()
+    {
+        await Assert.That(() => new DdsDecoderOptions { MipLevel = -1 }).Throws<ArgumentOutOfRangeException>();
+        await Assert.That(() => new DdsDecoderOptions { Layer = -1 }).Throws<ArgumentOutOfRangeException>();
+    }
+
+    private static DecoderOptions Select(DdsDecoderOptions options) => TestSupport.Options with { FormatOptions = [options] };
+
+    private static byte[] Fill(int count, byte value) => Enumerable.Repeat(value, count).ToArray();
+
     private static byte[] Dds(int width, int height, byte[] body, string? fourCC = null, uint? dxgi = null, uint alphaMode = 0,
-        uint flags = 0, int bitCount = 0, uint[]? masks = null)
+        uint flags = 0, int bitCount = 0, uint[]? masks = null, int mips = 0, int depth = 0, uint caps2 = 0, uint arraySize = 1,
+        uint miscFlag = 0)
     {
         byte[] header = new byte[dxgi is null ? 128 : 148];
         "DDS "u8.CopyTo(header);
@@ -163,6 +251,8 @@ public sealed class DdsTests
         BinaryPrimitives.WriteUInt32LittleEndian(header.AsSpan(8), 0x1007);
         BinaryPrimitives.WriteUInt32LittleEndian(header.AsSpan(12), (uint)height);
         BinaryPrimitives.WriteUInt32LittleEndian(header.AsSpan(16), (uint)width);
+        BinaryPrimitives.WriteUInt32LittleEndian(header.AsSpan(24), (uint)depth);
+        BinaryPrimitives.WriteUInt32LittleEndian(header.AsSpan(28), (uint)mips);
         BinaryPrimitives.WriteUInt32LittleEndian(header.AsSpan(76), 32);
         if (dxgi is not null)
         {
@@ -186,11 +276,13 @@ public sealed class DdsTests
         }
 
         BinaryPrimitives.WriteUInt32LittleEndian(header.AsSpan(108), 0x1000);
+        BinaryPrimitives.WriteUInt32LittleEndian(header.AsSpan(112), caps2);
         if (dxgi is not null)
         {
             BinaryPrimitives.WriteUInt32LittleEndian(header.AsSpan(128), dxgi.Value);
             BinaryPrimitives.WriteUInt32LittleEndian(header.AsSpan(132), 3);
-            BinaryPrimitives.WriteUInt32LittleEndian(header.AsSpan(140), 1);
+            BinaryPrimitives.WriteUInt32LittleEndian(header.AsSpan(136), miscFlag);
+            BinaryPrimitives.WriteUInt32LittleEndian(header.AsSpan(140), arraySize);
             BinaryPrimitives.WriteUInt32LittleEndian(header.AsSpan(144), alphaMode);
         }
 

@@ -14,11 +14,12 @@ internal sealed class DdsDecoder : IImageFormatDecoder
     {
         DdsHeader header = DdsHeader.Parse(data.Span);
         DdsSurface surface = DdsSurface.Resolve(header);
+        DdsSelection selection = header.Select(surface, options.GetFormatOptions<DdsDecoderOptions>());
         return new ImageInfo
         {
             Format = DdsFormat.Descriptor,
-            Width = header.Width,
-            Height = header.Height,
+            Width = selection.Width,
+            Height = selection.Height,
             HasAlpha = surface.HasAlpha,
         };
     }
@@ -28,20 +29,40 @@ internal sealed class DdsDecoder : IImageFormatDecoder
         ReadOnlySpan<byte> bytes = data.Span;
         DdsHeader header = DdsHeader.Parse(bytes);
         DdsSurface surface = DdsSurface.Resolve(header);
+        DdsSelection selection = header.Select(surface, context.Options.GetFormatOptions<DdsDecoderOptions>());
+        (int width, int height) = (selection.Width, selection.Height);
         ReadOnlySpan<byte> pixelData = bytes[header.DataOffset..];
-        context.ReservePixels(header.Width, header.Height);
+        ReadOnlySpan<byte> palette = default;
+        if (surface.Kind == DdsSurfaceKind.Palette8)
+        {
+            if (pixelData.Length < PaletteSize)
+            {
+                throw Error("The DDS palette is truncated.");
+            }
 
-        var image = new Image(header.Width, header.Height);
+            palette = pixelData[..PaletteSize];
+            pixelData = pixelData[PaletteSize..];
+        }
+
+        if (selection.Offset > pixelData.Length)
+        {
+            throw Error("The DDS surface data is truncated.");
+        }
+
+        pixelData = pixelData[(int)selection.Offset..];
+        context.ReservePixels(width, height);
+
+        var image = new Image(width, height);
         try
         {
             Span<Rgba32> pixels = image.GetPixelSpan();
             if (surface.IsBlockCompressed)
             {
-                DecodeBlocks(pixelData, surface, header.Width, header.Height, pixels, context);
+                DecodeBlocks(pixelData, surface, width, height, pixels, context);
             }
             else
             {
-                DecodeUncompressed(pixelData, surface, header.Width, header.Height, pixels, context);
+                DecodeUncompressed(pixelData, palette, surface, width, height, pixels, context);
             }
 
             if (surface.Opaque)
@@ -123,26 +144,10 @@ internal sealed class DdsDecoder : IImageFormatDecoder
         }
     }
 
-    private static void DecodeUncompressed(ReadOnlySpan<byte> data, DdsSurface surface, int width, int height, Span<Rgba32> pixels, ImageDecodeContext context)
+    private static void DecodeUncompressed(ReadOnlySpan<byte> data, ReadOnlySpan<byte> palette, DdsSurface surface, int width, int height,
+        Span<Rgba32> pixels, ImageDecodeContext context)
     {
-        ReadOnlySpan<byte> palette = default;
-        if (surface.Kind == DdsSurfaceKind.Palette8)
-        {
-            if (data.Length < PaletteSize)
-            {
-                throw Error("The DDS palette is truncated.");
-            }
-
-            palette = data[..PaletteSize];
-            data = data[PaletteSize..];
-        }
-
-        int bytesPerPixel = surface.Kind switch
-        {
-            DdsSurfaceKind.Masked => surface.BitCount / 8,
-            DdsSurfaceKind.LuminanceAlpha8 => 2,
-            _ => 1,
-        };
+        int bytesPerPixel = surface.BytesPerPixel;
 
         // Rows are tightly packed, as Pillow reads them.
         if (data.Length / bytesPerPixel / width < height)

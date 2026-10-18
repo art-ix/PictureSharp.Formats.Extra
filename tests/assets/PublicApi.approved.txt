@@ -1,3 +1,19 @@
+PictureSharp.Formats.Dds.DdsDecoderOptions
+  Boolean Equals(PictureSharp.Formats.Dds.DdsDecoderOptions)
+  Boolean Equals(PictureSharp.Formats.FormatDecoderOptions)
+  Boolean Equals(System.Object)
+  Boolean op_Equality(PictureSharp.Formats.Dds.DdsDecoderOptions, PictureSharp.Formats.Dds.DdsDecoderOptions)
+  Boolean op_Inequality(PictureSharp.Formats.Dds.DdsDecoderOptions, PictureSharp.Formats.Dds.DdsDecoderOptions)
+  Int32 GetHashCode()
+  Int32 Layer
+  Int32 MipLevel
+  Int32 get_Layer()
+  Int32 get_MipLevel()
+  PictureSharp.Formats.Dds.DdsDecoderOptions <Clone>$()
+  System.String ToString()
+  Void .ctor()
+  Void set_Layer(Int32)
+  Void set_MipLevel(Int32)
 PictureSharp.Formats.Dds.DdsEncoderOptions
   Boolean Equals(PictureSharp.EncoderOptions)
   Boolean Equals(PictureSharp.Formats.Dds.DdsEncoderOptions)
@@ -212,6 +228,28 @@ PictureSharp.Formats.Tga.TgaImageExtensions
   Void SaveAsTga(PictureSharp.Image, System.IO.Stream, PictureSharp.Formats.Tga.TgaEncoderOptions)
   Void SaveAsTga(PictureSharp.Image, System.String, PictureSharp.Formats.Tga.TgaEncoderOptions)
 PictureSharp.Formats.Tga.TgaOrigin
+PictureSharp.Formats.Vtf.VtfDecoderOptions
+  Boolean Equals(PictureSharp.Formats.FormatDecoderOptions)
+  Boolean Equals(PictureSharp.Formats.Vtf.VtfDecoderOptions)
+  Boolean Equals(System.Object)
+  Boolean op_Equality(PictureSharp.Formats.Vtf.VtfDecoderOptions, PictureSharp.Formats.Vtf.VtfDecoderOptions)
+  Boolean op_Inequality(PictureSharp.Formats.Vtf.VtfDecoderOptions, PictureSharp.Formats.Vtf.VtfDecoderOptions)
+  Int32 Face
+  Int32 Frame
+  Int32 GetHashCode()
+  Int32 MipLevel
+  Int32 Slice
+  Int32 get_Face()
+  Int32 get_Frame()
+  Int32 get_MipLevel()
+  Int32 get_Slice()
+  PictureSharp.Formats.Vtf.VtfDecoderOptions <Clone>$()
+  System.String ToString()
+  Void .ctor()
+  Void set_Face(Int32)
+  Void set_Frame(Int32)
+  Void set_MipLevel(Int32)
+  Void set_Slice(Int32)
 PictureSharp.Formats.Vtf.VtfFormat
   Boolean IsSupported(System.ReadOnlySpan`1[System.Byte])
   Int32 HeaderSize

@@ -4,7 +4,8 @@ using PictureSharp.Formats.Extra.Common.BlockCompression;
 namespace PictureSharp.Formats.Vtf;
 
 /// <summary>
-/// Decodes the largest mip level of the first frame, face and slice. Bytes are little endian; 4-, 5- and 6-bit fields
+/// Decodes the largest mip level of the first frame, face and slice, or the surface <see cref="VtfDecoderOptions"/>
+/// selects. Bytes are little endian; 4-, 5- and 6-bit fields
 /// widen as <c>v * 255 / max</c> (truncating), 16-bit channels as <c>round(v / 257)</c>. Bluescreen formats make pure
 /// blue transparent; A8 is black with alpha, I8 grey; UV88 and UVLX8888 store their fields in red, green (and blue).
 /// DXT and BC blocks use the DDS decoders.
@@ -16,11 +17,19 @@ internal sealed class VtfDecoder : IImageFormatDecoder
     public ImageInfo Identify(ReadOnlyMemory<byte> data, DecoderOptions options)
     {
         VtfHeader header = VtfHeader.Parse(data.Span);
+        // The default selection is the header's size; a chosen face needs the face count, which depends on the data.
+        (int width, int height) = (header.Width, header.Height);
+        if (options.GetFormatOptions<VtfDecoderOptions>() is { } selected)
+        {
+            VtfSelection selection = header.Select(data.Span, selected);
+            (width, height) = (selection.Width, selection.Height);
+        }
+
         return new ImageInfo
         {
             Format = VtfFormat.Descriptor,
-            Width = header.Width,
-            Height = header.Height,
+            Width = width,
+            Height = height,
             HasAlpha = header.HasAlpha,
             BitsPerChannel = header.Format == VtfPixelFormat.Rgba16161616 ? 16 : 8,
         };
@@ -31,20 +40,22 @@ internal sealed class VtfDecoder : IImageFormatDecoder
         ReadOnlySpan<byte> bytes = data.Span;
         VtfHeader header = VtfHeader.Parse(bytes);
         VtfHeader.ImageSize(header.Format, 1, 1);     // rejects unsupported formats before any allocation
-        context.ReservePixels(header.Width, header.Height);
-        ReadOnlySpan<byte> surface = header.LargestImage(bytes, out _);
+        VtfSelection selection = header.Select(bytes, context.Options.GetFormatOptions<VtfDecoderOptions>());
+        (int width, int height) = (selection.Width, selection.Height);
+        context.ReservePixels(width, height);
+        ReadOnlySpan<byte> surface = header.ImageData(bytes, selection, out _);
 
-        var image = new Image(header.Width, header.Height);
+        var image = new Image(width, height);
         try
         {
             Span<Rgba32> pixels = image.GetPixelSpan();
             if (IsBlockFormat(header.Format))
             {
-                DecodeBlocks(surface, header.Format, header.Width, header.Height, pixels, context);
+                DecodeBlocks(surface, header.Format, width, height, pixels, context);
             }
             else
             {
-                DecodePixels(surface, header.Format, header.Width, pixels, context);
+                DecodePixels(surface, header.Format, width, pixels, context);
             }
 
             return image;

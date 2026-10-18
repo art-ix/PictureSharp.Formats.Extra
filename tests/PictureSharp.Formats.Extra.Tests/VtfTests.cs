@@ -80,6 +80,70 @@ public sealed class VtfTests
         await Assert.That(format.IsSupported("VTF\0"u8)).IsFalse();
     }
 
+    [Test]
+    public async Task Options_SelectMipLevelAndFrame()
+    {
+        // I8 2x2, two levels and two frames, smallest level first: 1x1 frames 1, 2; 2x2 frames 3, 4.
+        byte[] file = [.. Header(2, 80, 2, 2, 5, 2, frames: 2), 1, 2, 3, 3, 3, 3, 4, 4, 4, 4];
+        using Image frame1 = TestSupport.Load(file, Select(new VtfDecoderOptions { Frame = 1 }));
+        using Image smallFrame1 = TestSupport.Load(file, Select(new VtfDecoderOptions { MipLevel = 1, Frame = 1 }));
+        await Assert.That(TestSupport.Pixels(frame1)).IsEquivalentTo(Enumerable.Repeat(new Rgba32(4, 4, 4), 4), CollectionOrdering.Matching);
+        await Assert.That(smallFrame1.GetPixelSpan()[0]).IsEqualTo(new Rgba32(2, 2, 2));
+        ImageInfo info = Image.Identify(file, Select(new VtfDecoderOptions { MipLevel = 1 }));
+        await Assert.That((info.Width, info.Height)).IsEqualTo((1, 1));
+        await Assert.That(() => TestSupport.Load(file, Select(new VtfDecoderOptions { Frame = 2 }))).Throws<ImageFormatException>();
+        await Assert.That(() => TestSupport.Load(file, Select(new VtfDecoderOptions { MipLevel = 2 }))).Throws<ImageFormatException>();
+        await Assert.That(() => Image.Identify(file, Select(new VtfDecoderOptions { Face = 1 }))).Throws<ImageFormatException>();
+    }
+
+    [Test]
+    public async Task Options_SelectFaceAndSphereMap()
+    {
+        byte[] cube = [.. Header(2, 80, 1, 1, 5, 1, flags: 0x4000), 10, 11, 12, 13, 14, 15];
+        using Image down = TestSupport.Load(cube, Select(new VtfDecoderOptions { Face = 5 }));
+        await Assert.That(down.GetPixelSpan()[0]).IsEqualTo(new Rgba32(15, 15, 15));
+        await Assert.That(() => TestSupport.Load(cube, Select(new VtfDecoderOptions { Face = 6 }))).Throws<ImageFormatException>();
+
+        using Image sphere = TestSupport.Load([.. cube, 16], Select(new VtfDecoderOptions { Face = 6 }));
+        await Assert.That(sphere.GetPixelSpan()[0]).IsEqualTo(new Rgba32(16, 16, 16));
+    }
+
+    [Test]
+    public async Task Options_SelectVolumeSliceOfTheLevel()
+    {
+        // I8 2x2x4, two levels: 1x1 slices 1, 2; then 2x2 slices 3–6.
+        byte[] file = [.. Header(2, 80, 2, 2, 5, 2, depth: 4), 1, 2, .. Enumerable.Range(3, 4).SelectMany(v => Enumerable.Repeat((byte)v, 4))];
+        using Image slice2 = TestSupport.Load(file, Select(new VtfDecoderOptions { Slice = 2 }));
+        using Image smallSlice1 = TestSupport.Load(file, Select(new VtfDecoderOptions { MipLevel = 1, Slice = 1 }));
+        await Assert.That(slice2.GetPixelSpan()[0]).IsEqualTo(new Rgba32(5, 5, 5));
+        await Assert.That(smallSlice1.GetPixelSpan()[0]).IsEqualTo(new Rgba32(2, 2, 2));
+        await Assert.That(() => TestSupport.Load(file, Select(new VtfDecoderOptions { MipLevel = 1, Slice = 2 }))).Throws<ImageFormatException>();
+    }
+
+    [Test]
+    public async Task Options_SelectCompressedFrameAndLevel()
+    {
+        // 7.6, 2x1 RGBA8888, two levels and two frames compressed one by one: 1x1 f0, 1x1 f1, 2x1 f0, 2x1 f1.
+        byte[][] parts = [Zlib([1, 1, 1, 255]), Zlib([2, 2, 2, 255]), Zlib([3, 3, 3, 255, 3, 3, 3, 255]), Zlib([4, 4, 4, 255, 5, 5, 5, 255])];
+        byte[] file = Vtf76(2, 1, 2, [.. parts.SelectMany(p => p)], [.. parts.Select(p => (uint)p.Length)], method: 8);
+        file[24] = 2;
+        using Image frame1 = TestSupport.Load(file, Select(new VtfDecoderOptions { Frame = 1 }));
+        using Image smallFrame1 = TestSupport.Load(file, Select(new VtfDecoderOptions { MipLevel = 1, Frame = 1 }));
+        await Assert.That(TestSupport.Pixels(frame1)).IsEquivalentTo(new[] { new Rgba32(4, 4, 4), new Rgba32(5, 5, 5) }, CollectionOrdering.Matching);
+        await Assert.That(smallFrame1.GetPixelSpan()[0]).IsEqualTo(new Rgba32(2, 2, 2));
+    }
+
+    [Test]
+    public async Task DecoderOptions_RejectNegativeIndices()
+    {
+        await Assert.That(() => new VtfDecoderOptions { MipLevel = -1 }).Throws<ArgumentOutOfRangeException>();
+        await Assert.That(() => new VtfDecoderOptions { Frame = -1 }).Throws<ArgumentOutOfRangeException>();
+        await Assert.That(() => new VtfDecoderOptions { Face = -1 }).Throws<ArgumentOutOfRangeException>();
+        await Assert.That(() => new VtfDecoderOptions { Slice = -1 }).Throws<ArgumentOutOfRangeException>();
+    }
+
+    private static DecoderOptions Select(VtfDecoderOptions options) => TestSupport.Options with { FormatOptions = [options] };
+
     private static Rgba32 Pixel(int format, byte[] data)
     {
         using Image image = TestSupport.Load(Vtf(format, data));
@@ -114,7 +178,7 @@ public sealed class VtfTests
         return [.. header, .. axc, .. data];
     }
 
-    private static byte[] Header(int minor, int size, int width, int height, int format, int mips)
+    private static byte[] Header(int minor, int size, int width, int height, int format, int mips, int frames = 1, uint flags = 0, int depth = 1)
     {
         byte[] header = new byte[size];
         "VTF\0"u8.CopyTo(header);
@@ -123,11 +187,12 @@ public sealed class VtfTests
         BinaryPrimitives.WriteUInt32LittleEndian(header.AsSpan(12), (uint)size);
         BinaryPrimitives.WriteUInt16LittleEndian(header.AsSpan(16), (ushort)width);
         BinaryPrimitives.WriteUInt16LittleEndian(header.AsSpan(18), (ushort)height);
-        BinaryPrimitives.WriteUInt16LittleEndian(header.AsSpan(24), 1);
+        BinaryPrimitives.WriteUInt32LittleEndian(header.AsSpan(20), flags);
+        BinaryPrimitives.WriteUInt16LittleEndian(header.AsSpan(24), (ushort)frames);
         BinaryPrimitives.WriteInt32LittleEndian(header.AsSpan(52), format);
         header[56] = (byte)mips;
         BinaryPrimitives.WriteInt32LittleEndian(header.AsSpan(57), -1);
-        BinaryPrimitives.WriteUInt16LittleEndian(header.AsSpan(63), 1);
+        BinaryPrimitives.WriteUInt16LittleEndian(header.AsSpan(63), (ushort)depth);
         return header;
     }
 

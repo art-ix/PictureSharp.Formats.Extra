@@ -2,7 +2,7 @@
 
 A plugin with extra formats for PictureSharp: QOI, PNM and TGA (read and write), DDS, PSD/PSB, SGI, Sun Raster and
 XBM/XPM. It has its own repository and SemVer, modelled on `PictureSharp.Heif`, and depends only on the public
-`PictureSharp` package (minimum 0.7.1), with no copies of core code.
+`PictureSharp` package (minimum 0.7.6), with no copies of core code.
 
 TIFF moved to the separate `PictureSharp.Tiff` package (repository `../PictureSharp.Tiff`, user decision of
 2026-10-17): it is a larger format for a different audience, with its own release cadence.
@@ -19,6 +19,7 @@ every platform). The core will drop this rule in the future.
 | 0.3.0 | PSD/PSB (merged image, read only) | Done (f62011b); first GitHub release v0.3.0, not yet on NuGet |
 | 0.4.0 | SGI (read and write), Sun Raster (read), XBM (read and write), XPM (read) | Done (525fb10); released as part of v0.5.0 |
 | 0.5.0 | VTF (read), ICNS (read) | Done (ee4c86a); GitHub release v0.5.0, not yet on NuGet |
+| 0.6.0 | Decoder options (`DdsDecoderOptions`, `VtfDecoderOptions`) through `DecoderOptions.FormatOptions`; PictureSharp 0.7.6 | Done locally, not committed |
 
 0.1.0 and 0.2.0 were never released on their own: the first release, v0.3.0, contains all three versions. 0.4.0 was
 released together with 0.5.0 as v0.5.0.
@@ -59,7 +60,7 @@ Remaining for the DoD:
 
 ## 0.2.0 — DDS
 
-- DX9 and DX10 headers; only mip level 0 of the first face/layer (choosing one needs per-plugin decoder options).
+- DX9 and DX10 headers; only mip level 0 of the first face/layer (choosing one: `DdsDecoderOptions`, 0.6.0).
 - BC1–BC5, BC7, BC6H block decoders (→ 8 bit, clamped to [0, 1]); scalar, SIMD only with an equality test.
 - DoD: pixels = Pillow (BC1–BC5, BC7) and a reference decoder (bcdec) for BC6H; BGRA8 writing round trip; BC6H/BC7
   samples from `texconv`/`nvcompress`, or an external corpus with the user's approval.
@@ -187,7 +188,27 @@ Done:
   Pillow 10.2.0 (Pillow-written PNG icons, RGB elements of every size, a TOC, PNG over RGB).
 - Tests: 1172/1172 (including Slow and Oracle); the corpus and `reference.json` regenerate byte for byte.
 
+## 0.6.0 — decoder options
+
+The core added per-plugin decoder options in 0.7.6 (`FormatDecoderOptions`, `DecoderOptions.FormatOptions`,
+`GetFormatOptions<T>()`); the minimum PictureSharp version is now 0.7.6.
+
+- `DdsDecoderOptions { MipLevel, Layer }`: the layer is the DX10 array element (six faces per cube element), the stored
+  face of a DX9 cube map or the slice of the selected level of a volume texture. Arrays and cubes store each layer
+  with its whole mip chain; volumes store all slices of a level before the next. The mip count follows DirectXTex
+  (0 means 1, the flag is ignored), capped at the full chain. The palette of 8-bit paletted files precedes every
+  surface.
+- `VtfDecoderOptions { MipLevel, Frame, Face, Slice }`: the existing layout walk with the selected indices; 7.6 files
+  inflate the selected mip/frame/face (slices are compressed together) up to the selected slice.
+- `Identify` reports the selected size; out-of-range indices → `ImageFormatException`, negative values →
+  `ArgumentOutOfRangeException`. Without a record the decoders behave exactly as in 0.5.0 (the default selection needs
+  none of the new header fields).
+- DoD: synthetic DDS (L8 chain, DX10 array, partial DX9 cube, DX10 cube array, volume, BC1 and paletted mips,
+  truncation) and VTF (frames, faces with the sphere map, volume slices, 7.6 Deflate) tests; README section
+  "Decoder options"; API snapshot. ICNS (choosing an icon size) and PSD layers stay out of scope.
+- Tests: 1183/1183 (including Slow and Oracle).
+
 ## Requests to the core
 
-- Per-plugin decoder options (choosing the DDS mip level/layer): extends the existing entry in the 0.8.0 gap table.
+- Per-plugin decoder options: done in PictureSharp 0.7.6, adopted in 0.6.0.
 - A place for format-specific metadata such as the XBM hotspot (or cursor hotspots in general) in `ImageMetadata`.

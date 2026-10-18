@@ -2,7 +2,8 @@ namespace PictureSharp.Formats.Dds;
 
 /// <summary>
 /// The DirectDraw Surface format plugin: uncompressed and block-compressed (BC1–BC7, BC6H) textures with DX9 or DX10
-/// headers. Only the first surface is decoded: mip level 0 of the first array element, cube face or volume slice.
+/// headers. One surface is decoded: mip level 0 of the first array element, cube face or volume slice, or the one
+/// <see cref="DdsDecoderOptions"/> selects.
 /// </summary>
 /// <example>
 /// <code>

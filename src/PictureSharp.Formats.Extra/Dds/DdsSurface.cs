@@ -34,6 +34,18 @@ internal readonly record struct DdsSurface(
 
     public int BlockSize => Kind is DdsSurfaceKind.Bc1 or DdsSurfaceKind.Bc4 or DdsSurfaceKind.Bc4Signed ? 8 : 16;
 
+    public int BytesPerPixel => Kind switch
+    {
+        DdsSurfaceKind.Masked => BitCount / 8,
+        DdsSurfaceKind.LuminanceAlpha8 => 2,
+        _ => 1,
+    };
+
+    /// <summary>Bytes of one surface: whole 4×4 blocks, or tightly packed rows.</summary>
+    public long SurfaceSize(int width, int height) => IsBlockCompressed
+        ? ((width + 3L) / 4) * ((height + 3L) / 4) * BlockSize
+        : (long)width * height * BytesPerPixel;
+
     public bool HasAlpha => !Opaque && Kind switch
     {
         DdsSurfaceKind.Masked => AlphaMask != 0,

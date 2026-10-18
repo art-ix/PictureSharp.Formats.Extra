@@ -1,10 +1,11 @@
 using System.Buffers.Binary;
+using System.Diagnostics.CodeAnalysis;
 
 namespace PictureSharp.Formats.Vtf;
 
 /// <summary>
-/// The VTF header (version 7.0–7.6) and where the largest mip level of the first frame, face and slice lies. Image
-/// data is ordered from the smallest mip level to the largest; within a level by frame, face and slice.
+/// The VTF header (version 7.0–7.6) and where a mip level of a frame, face and slice lies. Image data is ordered from
+/// the smallest mip level to the largest; within a level by frame, face and slice.
 /// </summary>
 internal readonly record struct VtfHeader(
     int Minor,
@@ -88,27 +89,40 @@ internal readonly record struct VtfHeader(
     }
 
     /// <summary>
-    /// The bytes of the largest mip level of the first frame, face and slice, decompressed when a 7.6 file stores its
-    /// image data with Deflate.
+    /// Finds the image data and checks the selected mip level, frame, face and slice against the file. Without options
+    /// it selects the largest mip level of the first frame, face and slice.
     /// </summary>
-    public ReadOnlySpan<byte> LargestImage(ReadOnlySpan<byte> data, out byte[]? decompressed)
+    public VtfSelection Select(ReadOnlySpan<byte> data, VtfDecoderOptions? options)
     {
-        decompressed = null;
-        long size = ImageSize(Format, Width, Height);
         (long start, long compression) = Minor >= 3 ? FindResources(data) : (DataStartBeforeResources(), -1L);
         int faces = FaceCount(data.Length - start);
-        if (compression >= 0 && TryReadCompression(data, compression, faces, start, size, out decompressed))
+        int mip = options?.MipLevel ?? 0, frame = options?.Frame ?? 0, face = options?.Face ?? 0, slice = options?.Slice ?? 0;
+        CheckIndex(mip, MipCount, "mip levels", "level");
+        CheckIndex(frame, Frames, "frames", "frame");
+        CheckIndex(face, faces, "faces", "face");
+        CheckIndex(slice, Math.Max(1, Depth >> mip), "slices at this mip level", "slice");
+        return new VtfSelection(mip, frame, face, slice, Math.Max(1, Width >> mip), Math.Max(1, Height >> mip), start, compression, faces);
+    }
+
+    /// <summary>The bytes of the selected surface, decompressed when a 7.6 file stores its image data with Deflate.</summary>
+    public ReadOnlySpan<byte> ImageData(ReadOnlySpan<byte> data, VtfSelection selection, out byte[]? decompressed)
+    {
+        decompressed = null;
+        long size = ImageSize(Format, selection.Width, selection.Height);
+        if (selection.Compression >= 0 && TryReadCompression(data, selection, size, out decompressed))
         {
-            return decompressed;
+            return decompressed.AsSpan((int)(selection.Slice * size));
         }
 
-        long offset = start;
-        for (int mip = MipCount - 1; mip > 0; mip--)
+        long offset = selection.Start;
+        for (int mip = MipCount - 1; mip > selection.Mip; mip--)
         {
-            long items = (long)Frames * faces * Math.Max(1, Depth >> mip);
+            long items = (long)Frames * selection.Faces * Math.Max(1, Depth >> mip);
             offset = Add(offset, Multiply(ImageSize(Format, Math.Max(1, Width >> mip), Math.Max(1, Height >> mip)), items));
         }
 
+        long index = ((long)selection.Frame * selection.Faces + selection.Face) * Math.Max(1, Depth >> selection.Mip) + selection.Slice;
+        offset = Add(offset, Multiply(size, index));
         if (offset > data.Length || size > data.Length - offset)
         {
             throw VtfDecoder.Error("The VTF image data is truncated.");
@@ -211,11 +225,12 @@ internal readonly record struct VtfHeader(
     /// <summary>
     /// The AXC resource of 7.6: a length, the compression level (low 16 bits) and method (high 16 bits), then the
     /// compressed length of every mip level, frame and face in storage order; the slices of a face are compressed
-    /// together. Level 0 means uncompressed data.
+    /// together, so the slices up to the selected one are inflated. Level 0 means uncompressed data.
     /// </summary>
-    private bool TryReadCompression(ReadOnlySpan<byte> data, long resource, int faces, long start, long size, out byte[]? decompressed)
+    private bool TryReadCompression(ReadOnlySpan<byte> data, VtfSelection selection, long size, [NotNullWhen(true)] out byte[]? decompressed)
     {
         decompressed = null;
+        long resource = selection.Compression;
         if (resource > data.Length - 8)
         {
             throw VtfDecoder.Error("The VTF compression resource is truncated.");
@@ -233,13 +248,13 @@ internal readonly record struct VtfHeader(
             throw new NotSupportedException($"VTF compression method {method} is not supported.");
         }
 
-        long index = (long)(MipCount - 1) * Frames * faces;
+        long index = ((long)(MipCount - 1 - selection.Mip) * Frames + selection.Frame) * selection.Faces + selection.Face;
         if (index > (data.Length - resource - 12) / 4)
         {
             throw VtfDecoder.Error("The VTF compression resource is truncated.");
         }
 
-        long offset = start;
+        long offset = selection.Start;
         ReadOnlySpan<byte> lengths = data.Slice((int)(resource + 8), (int)(index + 1) * 4);
         for (int i = 0; i < index; i++)
         {
@@ -252,7 +267,7 @@ internal readonly record struct VtfHeader(
             throw VtfDecoder.Error("The VTF compressed image data is truncated.");
         }
 
-        decompressed = Inflate(data.Slice((int)offset, (int)length).ToArray(), size);
+        decompressed = Inflate(data.Slice((int)offset, (int)length).ToArray(), Multiply(size, selection.Slice + 1L));
         return true;
     }
 
@@ -280,7 +295,18 @@ internal readonly record struct VtfHeader(
         return result;
     }
 
+    private static void CheckIndex(int index, long count, string what, string name)
+    {
+        if (index >= count)
+        {
+            throw VtfDecoder.Error($"The VTF file has {count} {what}; {name} {index} was requested.");
+        }
+    }
+
     private static long Multiply(long a, long b) => b != 0 && a > long.MaxValue / b ? long.MaxValue : a * b;
 
     private static long Add(long a, long b) => a > long.MaxValue - b ? long.MaxValue : a + b;
 }
+
+/// <summary>The selected mip level, frame, face and slice, its size, and where the image data and the AXC resource (or -1) start.</summary>
+internal readonly record struct VtfSelection(int Mip, int Frame, int Face, int Slice, int Width, int Height, long Start, long Compression, int Faces);
