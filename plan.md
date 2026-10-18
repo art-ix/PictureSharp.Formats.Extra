@@ -17,10 +17,11 @@ every platform). The core will drop this rule in the future.
 | 0.1.0 | Repository skeleton, QOI, PNM, TGA (read and write) | Done (b891c11); released as part of v0.3.0 |
 | 0.2.0 | DDS: DX9/DX10, uncompressed, BC1–BC5, BC7, BC6H; BGRA8/BGRX8 writing | Done (268087c); released as part of v0.3.0 |
 | 0.3.0 | PSD/PSB (merged image, read only) | Done (f62011b); first GitHub release v0.3.0, not yet on NuGet |
-| 0.4.0 | SGI (read and write), Sun Raster (read), XBM (read and write), XPM (read) | Done (525fb10); VERSION 0.4.0, not released |
-| 0.5.0 | VTF (read), ICNS (read) | Done (not committed) |
+| 0.4.0 | SGI (read and write), Sun Raster (read), XBM (read and write), XPM (read) | Done (525fb10); released as part of v0.5.0 |
+| 0.5.0 | VTF (read), ICNS (read) | Done (ee4c86a); GitHub release v0.5.0, not yet on NuGet |
 
-0.1.0 and 0.2.0 were never released on their own: the first release, v0.3.0, contains all three versions.
+0.1.0 and 0.2.0 were never released on their own: the first release, v0.3.0, contains all three versions. 0.4.0 was
+released together with 0.5.0 as v0.5.0.
 
 User decision (2026-10-17): after DDS come PSD/PSB, SGI, Sun Raster and XBM/XPM. Out of scope: CUR (belongs in the
 core next to ICO), HDR formats (Radiance, OpenEXR — waiting for the HDR SPI), AVIF/JPEG XL/JPEG 2000 (separate
