@@ -19,7 +19,7 @@ every platform). The core will drop this rule in the future.
 | 0.3.0 | PSD/PSB (merged image, read only) | Done (f62011b); first GitHub release v0.3.0, not yet on NuGet |
 | 0.4.0 | SGI (read and write), Sun Raster (read), XBM (read and write), XPM (read) | Done (525fb10); released as part of v0.5.0 |
 | 0.5.0 | VTF (read), ICNS (read) | Done (ee4c86a); GitHub release v0.5.0, not yet on NuGet |
-| 0.6.0 | Decoder options (`DdsDecoderOptions`, `VtfDecoderOptions`) through `DecoderOptions.FormatOptions`; PictureSharp 0.7.6 | Done locally, not committed |
+| 0.6.0 | Decoder options (`DdsDecoderOptions`, `VtfDecoderOptions`) through `DecoderOptions.FormatOptions`; PictureSharp 0.7.6 | Done (edf58bd); GitHub release v0.6.0, not yet on NuGet |
 
 0.1.0 and 0.2.0 were never released on their own: the first release, v0.3.0, contains all three versions. 0.4.0 was
 released together with 0.5.0 as v0.5.0.
